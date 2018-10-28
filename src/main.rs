@@ -1,33 +1,23 @@
-
-
-
 extern crate xml;
+extern crate rusttype;
 
-mod state;
+mod chunk;
 mod typer;
+mod units;
+mod renderer;
 
-use state::*;
+use chunk::*;
 use typer::*;
+use units::*;
+use renderer::*;
 
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
 use xml::reader::{EventReader, XmlEvent};
+use self::rusttype::{Font};
 
-
-
-
-
-
-
-
-
-fn indent(size: usize) -> String {
-    const INDENT: &'static str = "    ";
-    (0..size).map(|_| INDENT)
-             .fold(String::with_capacity(size*INDENT.len()), |r, s| r + s)
-}
 
 fn main() {
 
@@ -37,36 +27,14 @@ fn main() {
 	let mut data = String::new();
 	file.read_to_string(&mut data).unwrap();
 
-	typer.parse(&data);
+	let chunks = typer.parse(&data);
 
+	 let font_data = include_bytes!("../fonts/wqy-microhei/WenQuanYiMicroHei.ttf");
+    // This only succeeds if collection consists of one font
+    let font = Font::from_bytes(font_data as &[u8]).expect("Error constructing Font");
 
-    // let file = BufReader::new(file);
-
-    // let parser = EventReader::new(file);
-    // let mut depth = 0;
-    // for e in parser {
-    //     match &e {
-    //         Ok(XmlEvent::StartElement { name, .. }) => {
-    //             println!("{}+{}", indent(depth), name);
-    //             // println!("{}+{:?}", indent(depth), e);
-    //             depth += 1;
-    //         }
-    //         Ok(XmlEvent::EndElement { name }) => {
-    //             depth -= 1;
-    //             println!("{}-{}", indent(depth), name);
-    //         }
-    //         Ok(XmlEvent::Characters(eeee)) => {
-    //             // depth -= 1;
-    //             println!("{} {}", indent(depth), eeee);
-    //         }
-    //         Err(e) => {
-    //             println!("Error: {}", e);
-    //             break;
-    //         }
-    //         _ => {}
-    //     }
-    //     // println!("{:?}", e);
-    // }
+	let renderer = TextRenderer::new();
+	renderer.render(chunks, &[font], 1.0);
 }
 
 

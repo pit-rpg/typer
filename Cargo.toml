@@ -5,3 +5,5 @@ authors = ["Krovspei Stepan <shtefanrpg@gmail.com>"]
 
 [dependencies]
 xml-rs = "0.8.0"
+rusttype = "0.7.2"
+unicode-normalization = "0.1.7"
