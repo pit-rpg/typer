@@ -69,6 +69,12 @@ impl Chunk {
 
 		self
 	}
+
+	pub fn duplicate(&self) -> Self {
+		let mut  n = Self::new();
+		n.patch(self);
+		n
+	}
 }
 
 
@@ -78,7 +84,7 @@ impl Default for Chunk {
 			bold: Some(false),
 			italic: Some(false),
 			font_size: Some(10),
-			color: Some( ColorRGBA::default() ),
+			color: Some( [0.0, 0.0, 0.0, 0.5] ),
 			text_align_horizontal: Some(TextAlignHorizontal::Left),
 			font: None,
 			string: "".to_string(),
