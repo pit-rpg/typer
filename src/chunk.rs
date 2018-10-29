@@ -1,6 +1,7 @@
 use std::ops::Add;
 use super::units::*;
 
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TextAlignHorizontal {
 	Left,
@@ -59,6 +60,7 @@ impl Chunk {
 		}
 	}
 
+
 	pub fn patch(&mut self, other: &Self) -> &mut Self {
 
 		if other.font_size != None 	{self.font_size = other.font_size;}
@@ -69,6 +71,7 @@ impl Chunk {
 
 		self
 	}
+
 
 	pub fn duplicate(&self) -> Self {
 		let mut  n = Self::new();
@@ -84,7 +87,7 @@ impl Default for Chunk {
 			bold: Some(false),
 			italic: Some(false),
 			font_size: Some(10),
-			color: Some( [0.0, 0.0, 0.0, 0.5] ),
+			color: Some( [0, 0, 0, 255] ),
 			text_align_horizontal: Some(TextAlignHorizontal::Left),
 			font: None,
 			string: "".to_string(),
