@@ -1,14 +1,10 @@
 extern crate rusttype;
 extern crate unicode_normalization;
 
-// use self::rusttype::gpu_cache::Cache;
+use std::char;
 use self::rusttype::*;
 use self::unicode_normalization::UnicodeNormalization;
-// use std::usize::MAX;
 use super::*;
-// use std::convert::TryFrom;
-// use std::char::from_u32_unchecked;
-use std::char;
 
 
 use units::ColorRGBA;
@@ -19,16 +15,11 @@ pub struct TextRenderer<'a> {
 	pub height: usize,
 	pub break_word: bool,
 	pub padding: (usize, usize, usize, usize),
-	// pub chunks: Vec<Chunk>,
 
-	// max_height: usize,
-
-	pub lines: Vec<(Vec<(ScaledGlyph<'a>, Chunk)>, f32, f32)>,
-	pub current_line: Vec<(ScaledGlyph<'a>, Chunk)>,
-	// pub current_word: Vec<ScaledGlyph<'a>>,
-	pub advance_height: f32,
-	pub line_width: f32,
-
+	lines: Vec<(Vec<(ScaledGlyph<'a>, Chunk)>, f32, f32)>,
+	current_line: Vec<(ScaledGlyph<'a>, Chunk)>,
+	advance_height: f32,
+	line_width: f32,
 }
 
 
@@ -36,7 +27,7 @@ pub struct TextRenderer<'a> {
 impl <'a> TextRenderer<'a> {
 	pub fn new () -> Self {
 		Self {
-			background: [1.0,1.0,1.0,1.0],
+			background: [255,255,255,255],
 			width: 0,
 			height: 0,
 			break_word: false,
@@ -44,10 +35,8 @@ impl <'a> TextRenderer<'a> {
 
 			lines: Vec::new(),
 			current_line: Vec::new(),
-			// current_word: Vec::new(),
 			advance_height: 0.0,
 			line_width: 0.0,
-			// chunks
 		}
 	}
 
@@ -102,7 +91,7 @@ impl <'a> TextRenderer<'a> {
 					scale = Scale::uniform(font_size as f32 * dpi_factor);
 					v_metrics = font.v_metrics(scale);
 					self.advance_height = self.advance_height.max(v_metrics.ascent - v_metrics.descent + v_metrics.line_gap);
-					println!("{}", self.advance_height);
+					// println!("{}", self.advance_height);
 				}
 
 				let base_glyph = font.glyph(letter);
@@ -196,7 +185,7 @@ impl <'a> TextRenderer<'a> {
 
 		let mut buffer = ImgBuffer::new(img_width, img_height, &self.background);
 		let mut last_glyph_id = None;
-		let mut color = [0.0,0.0,0.0,0.0];
+		let mut color = [0,0,0,255];
 		let mut bg = self.background;
 
 		for (line, width, height) in self.lines.iter_mut() {
@@ -222,55 +211,14 @@ impl <'a> TextRenderer<'a> {
 					color = c_color;
 				}
 
-				// println!("draw glyph: {:?}", glyph.id());
-				println!("caret: {:?}", caret);
-				// println!("last_glyph_id: {:?}", last_glyph_id);
-				// println!("bg: {:?}", bg);
-
 				if let Some(bounding_box) = glyph.pixel_bounding_box() {
-					// println!("BB: {:?}", bounding_box);
-
-
 					glyph.draw(|x, y, v| {
 						let x = (bounding_box.min.x+(x as i32)) as usize;
 						let y = (bounding_box.min.y+(y as i32)) as usize;
-						// println!("===> {}, {}", x, y);
 
-						// let alpha = v;
-
-						buffer.put_pixel(x, y, [
-							(((bg[0]*(1.0-v)) + (color[0] * v)) * 255.0) as u8,
-							(((bg[1]*(1.0-v)) + (color[1] * v)) * 255.0) as u8,
-							(((bg[2]*(1.0-v)) + (color[2] * v)) * 255.0) as u8,
-							(((bg[3]*(1.0-v)) + (color[3] * v)) * 255.0) as u8,
-							// ((bg[3] + (color[3] * v)) * 255.0) as u8,
-							// (bg[0] + (bg[0] - color[0] * alpha)) as u8,
-							// (bg[1] + (bg[1] - color[1] * alpha)) as u8,
-							// (bg[2] + (bg[2] - color[2] * alpha)) as u8,
-							// (bg[3] + alpha) as u8
-
-						]);
-						// image.put_pixel(
-						// 	// Offset the position by the glyph bounding box
-						// 	x + bounding_box.min.x as u32,
-						// 	y + bounding_box.min.y as u32,
-						// 	// Turn the coverage into an alpha value
-						// 	Rgba {
-						// 		data: [colour.0, colour.1, colour.2, (v * 255.0) as u8],
-						// 	},
-						// )
+						buffer.put_pixel_alpha_blend(x, y, &color, v);
 					});
 				}
-
-				// glyph
-				// 	.draw(|x, y, v| {
-				// 		buffer.put_pixel(x as usize, y as usize, [
-				// 			color[0],
-				// 			color[1],
-				// 			color[2],
-				// 			(color[3] as f32 * v) as u8
-				// 		]);
-				// 	});
 
 				last_glyph_id = Some(glyph.id());
 				caret.x += glyph.unpositioned().h_metrics().advance_width;

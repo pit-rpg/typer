@@ -40,50 +40,12 @@ fn main() {
 
 	let buffer = renderer.render(chunks, &fonts, 1.0);
 
-	println!("w:{}, h:{}", buffer.width, buffer.height);
-	println!("len: {}, c:{}", buffer.buffer.len(), buffer.width * buffer.height * 4);
-	// let buffer.buffer;
-	// for i in 0..buffer.height {
-	// 	let height = buffer.height as usize;
-	// 	let width = buffer.width as usize;
-	// 	let slice = &buffer.buffer[ width*i*4..width*(i+1)*4 ];
-	// 	// let slice: Vec<u8> = slice
-	// 	// 	.iter()
-	// 	// 	.step_by(4)
-	// 	// 	.map( |e| if *e > 100 {1} else {0} )
-	// 	// 	.collect();
-
-	// 	println!("{:?}", slice);
-	// }
-
-	// let mut pixels = Vec::with_capacity(buffer.width * buffer.height);
-	// for i in 0 .. buffer.width * buffer.height {
-	// 	let pixel = Rgba { data:[
-	// 		buffer.buffer[i  ],
-	// 		buffer.buffer[i+1],
-	// 		buffer.buffer[i+2],
-	// 		buffer.buffer[i+3]
-	// 	]};
-	// 	pixels.push(pixel);
-	// }
 	let mut imgbuf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
 	imgbuf.save("image_example.png").unwrap();
 
 
-	// let mut imgbuf = image::RgbaImage::new(buffer.width as u32, buffer.height as u32);
-	// let mut imgbuf = image::GrayImage::new(buffer.width, buffer.height);
-
 
 }
-
-
-// #[cfg(test)]
-// mod tests {
-//     #[test]
-//     fn it_works() {
-//         assert_eq!(2 + 2, 4);
-//     }
-// }
 
 
 
