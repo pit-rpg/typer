@@ -55,6 +55,7 @@ impl Typer {
 		let mut chunks: Vec<Chunk> 	= Vec::new();
 
 		for e in parser {
+			println!("{:?}", e);
 			match e {
 				Ok( XmlEvent::StartElement { name, attributes, .. } ) => {
 					let tag = Tags::new(&name.local_name);
@@ -70,7 +71,7 @@ impl Typer {
 				Ok( XmlEvent::EndElement{..} ) => {
 					current_chunk = chunks_stack.pop().unwrap();
 				}
-				Ok( XmlEvent::Characters(str_chunks) ) => {
+				Ok( XmlEvent::Characters(str_chunks) ) | Ok( XmlEvent::Whitespace(str_chunks) ) => {
 					let mut new_chunk = Chunk::new();
 					new_chunk.patch(&current_chunk);
 					new_chunk.string = str_chunks;

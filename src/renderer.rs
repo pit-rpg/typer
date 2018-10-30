@@ -5,7 +5,7 @@ use std::char;
 use self::rusttype::*;
 use self::unicode_normalization::UnicodeNormalization;
 use super::*;
-use std::cmp::Ordering;
+// use std::cmp::Ordering;
 
 use units::ColorRGBA;
 
@@ -18,7 +18,6 @@ pub struct TextRenderer<'a> {
 
 	lines: Vec<Line<'a>>,
 	current_line: Vec<(ScaledGlyph<'a>, Chunk)>,
-	line_advance_height: f32,
 	line_height: f32,
 	line_width: f32,
 	descent: f32,
@@ -42,7 +41,6 @@ fn is_can_line_break(c: char) -> bool {
 
 struct Line<'a> {
 	glyphs: Vec<(ScaledGlyph<'a>, Chunk)>,
-	advance_height: f32,
 	descent: f32,
 	height: f32,
 	width: f32,
@@ -59,7 +57,6 @@ impl <'a> TextRenderer<'a> {
 
 			lines: Vec::new(),
 			current_line: Vec::new(),
-			line_advance_height: 0.0,
 			line_height: 0.0,
 			line_width: 0.0,
 			descent: 0.0,
@@ -88,16 +85,14 @@ impl <'a> TextRenderer<'a> {
 
 
 	fn nwe_line(&mut self, line_width: f32) {
-		self.lines.push(Line{
+		self.lines.push(Line {
 			glyphs: self.current_line.clone(),
 			width: line_width,
-			advance_height: self.line_advance_height,
 			height: self.line_height,
 			descent: self.descent,
 		});
 		self.current_line = Vec::new();
 		self.line_width = 0.0;
-		self.line_advance_height = 0.0;
 		self.line_height = 0.0;
 		self.descent = 0.0;
 	}
@@ -124,22 +119,11 @@ impl <'a> TextRenderer<'a> {
 				if let Some(font_size) = chunk.font_size {
 					scale = Scale::uniform(font_size as f32 * dpi_factor);
 					v_metrics = font.v_metrics(scale);
-					println!("{:?}", v_metrics);
-					self.line_advance_height = self.line_advance_height.max(v_metrics.ascent + v_metrics.line_gap - v_metrics.descent);
 					self.line_height = self.line_height.max(v_metrics.line_gap + v_metrics.ascent);
 					self.descent = self.descent.min(v_metrics.descent);
-					// println!("{}", self.line_advance_height);
 				}
 
 				let is_break = is_line_break(letter);
-				// if is_break {
-				// 	// new line
-				// 	let w = self.line_width;
-				// 	self.nwe_line(w);
-				// 	continue;
-				// }
-
-				// println!("<>");
 
 				let base_glyph = font.glyph(letter);
 				let mut glyph = base_glyph.scaled(scale);
@@ -197,8 +181,8 @@ impl <'a> TextRenderer<'a> {
 		let w = self.line_width;
 		self.nwe_line(w);
 
-		for Line{advance_height, width, height, ..} in self.lines.iter() {
-			println!("---- {}x{} - {}", width.ceil() as usize, advance_height.ceil() as usize, height.ceil() as usize);
+		for Line{width, height, ..} in self.lines.iter() {
+			println!("---- {}x{}", width.ceil() as usize, height.ceil() as usize);
 		}
 		println!("lines: {}", self.lines.len());
 
@@ -225,15 +209,12 @@ impl <'a> TextRenderer<'a> {
 		let mut buffer = ImgBuffer::new(img_width, img_height, &self.background);
 		let mut last_glyph_id = None;
 		let mut color = [0,0,0,255];
-		let mut bg = self.background;
 
-		for Line{glyphs, width, advance_height, height, ..} in self.lines.iter_mut() {
-			println!("---- {}", height);
+		for Line {glyphs, height, ..} in self.lines.iter_mut() {
 
 			last_glyph_id = None;
 			caret.y += *height;
 			caret.x = 0.0;
-
 
 			for (scaled_glyph, chunk) in glyphs.drain(..) {
 				if !eq_font(&current_font_name, &chunk.font) {
@@ -275,9 +256,9 @@ impl <'a> TextRenderer<'a> {
 
 fn eq_font<'a>(a: &Option<String>, b: &Option<String>) -> bool {
 	match (a, b) {
-		(Some(na), Some(nb)) => {na==nb}
-		(Some(na), None) => {false}
-		(None, Some(na),) => {false}
+		(Some(na), Some(nb)) => {na == nb}
+		(Some(_), None) => {false}
+		(None, Some(_),) => {false}
 		_ => false
 	}
 }
