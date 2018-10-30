@@ -24,7 +24,7 @@ impl ImgBuffer {
 	}
 
 	pub fn get_pixel_mut(&mut self, x: usize, y: usize) -> &mut [u8] {
-		let i = (x*4) + (self.width*4 * y);
+		let i = ((y-1)*(self.width*4)) + (x*4);
 		&mut self.buffer[i..(i+4)]
 	}
 
@@ -37,6 +37,9 @@ impl ImgBuffer {
 	}
 
 	pub fn put_pixel_alpha_blend(&mut self, x:usize ,y:usize, pixel: &[u8;4], v:f32) {
+		if x > self.width 	{return;}
+		if y > self.height 	{return;}
+
 		let o_pixel = self.get_pixel_mut(x, y);
 		let f_pixel = [
 			pixel[0] as f32 / 255.0,
