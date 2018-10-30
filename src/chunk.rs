@@ -54,6 +54,25 @@ impl Chunk {
 					_ => {}
 				}
 			}
+			"color" 			=> {
+				let err = &format!("wrong color: {}", val);
+				if val.starts_with('#') && val.len() == 7 {
+					println!("val: {}", val);
+					self.color = Some([
+						u8::from_str_radix(val.get(1..3).expect(err), 16).expect(err),
+						u8::from_str_radix(val.get(3..5).expect(err), 16).expect(err),
+						u8::from_str_radix(val.get(5..).expect(err), 16).expect(err),
+						255
+					]);
+				} else if val.starts_with('#') && val.len() == 9 {
+					self.color = Some([
+						u8::from_str_radix(val.get(1..3).expect(err), 16).expect(err),
+						u8::from_str_radix(val.get(3..5).expect(err), 16).expect(err),
+						u8::from_str_radix(val.get(5..7).expect(err), 16).expect(err),
+						u8::from_str_radix(val.get(7..).expect(err), 16).expect(err)
+					]);
+				}
+			}
 			_ => {
 				println!("unknown attribute: {}", key);
 			}
