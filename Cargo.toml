@@ -7,4 +7,11 @@ authors = ["Krovspei Stepan <shtefanrpg@gmail.com>"]
 xml-rs = "0.8.0"
 rusttype = "0.7.2"
 unicode-normalization = "0.1.7"
-image = "0.20.0"
+image = "0.20.1"
+
+
+[dev-dependencies]
+
+
+[[example]]
+name = "simple"

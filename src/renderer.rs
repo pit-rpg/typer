@@ -1,10 +1,13 @@
 extern crate rusttype;
 extern crate unicode_normalization;
 
+use std::path::PathBuf;
 use std::char;
 use self::rusttype::*;
 use self::unicode_normalization::UnicodeNormalization;
 use super::*;
+
+
 // use std::cmp::Ordering;
 
 use units::ColorRGBA;
@@ -64,21 +67,30 @@ impl <'a> TextRenderer<'a> {
 	}
 
 
-	fn find_font(name: &Option<String>, fonts: &'a[Font<'a>]) -> &'a Font<'a> {
+	pub fn load_fonts(data: Vec<(String, PathBuf)>) -> Vec<(String, Font<'a>)> {
+		let mut result = Vec::with_capacity(data.len());
+		for (name, path) in data {
+			let mut f = File::open(path).expect("wrong font path");
+			let mut buffer = Vec::new();
+			f.read_to_end(&mut buffer).expect("cant read from font file");
+			let font = Font::from_bytes(buffer).expect("Error constructing Font");
+			result.push((name, font));
+		}
+		result
+	}
+
+
+	fn find_font(name: &Option<String>, fonts: &'a [(String, Font<'a>)]) -> &'a Font<'a> {
 		match name {
-			None => {&fonts[0]}
+			None => {&fonts[0].1}
 			Some(font_name) => {
-				for font in fonts {
-					for (data, _, _) in font.font_name_strings() {
-						let res: String = data
-							.iter()
-							.map(|e| *e as char)
-							.collect();
-						// println!("{}", res);
-						if res == *font_name {return font;}
-					}
+				let res = fonts
+					.iter()
+					.find(|(name, _)| name == font_name );
+				if let Some(font) = res {
+					return &font.1;
 				}
-				&fonts[0]
+				&fonts[0].1
 			}
 		}
 	}
@@ -98,7 +110,7 @@ impl <'a> TextRenderer<'a> {
 	}
 
 
-	pub fn render(&mut self, chunks: Vec<Chunk>, fonts: &'a[Font<'a>], dpi_factor: f32) -> ImgBuffer {
+	pub fn render(&mut self, chunks: Vec<Chunk>, fonts: &'a[(String, Font<'a>)], dpi_factor: f32) -> ImgBuffer {
 
 		// calc lines
 		let mut font = TextRenderer::find_font(&chunks[0].font, fonts);
@@ -161,12 +173,20 @@ impl <'a> TextRenderer<'a> {
 							word_width += h_metrics.advance_width;
 						}
 					} else {
-						if self.line_width > self.width as f32 {
-							// new line
+						if is_break {
 							let w = self.line_width - h_metrics.advance_width;
 							self.nwe_line(w);
+						} else if self.line_width > self.width as f32 {
+							let w = self.line_width - h_metrics.advance_width;
+							self.nwe_line(w);
+
+							if !is_can_line_break(letter) {
+								self.current_line.push((glyph, chunk.duplicate()));
+								self.line_width += h_metrics.advance_width;
+							}
+						} else {
+							self.current_line.push((glyph, chunk.duplicate()));
 						}
-						self.current_line.push((glyph, chunk.duplicate()));
 					}
 				} else if is_break {
 					let w = self.line_width - h_metrics.advance_width;
