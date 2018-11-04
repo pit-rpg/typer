@@ -108,6 +108,17 @@ impl <'a> TextRenderer<'a> {
 			}
 		};
 
+		let mut white_space = false;
+		{
+			if self.current_line.len() != 0 {
+				let (_, _, c) = self.current_line.last().unwrap();
+				white_space = is_can_line_break(*c);
+			}
+		}
+		if white_space {
+			self.current_line.pop();
+		}
+
 		self.lines.push(Line {
 			glyphs: self.current_line.clone(),
 			width: line_width,
