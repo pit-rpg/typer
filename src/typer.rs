@@ -33,7 +33,7 @@ impl Tags {
 
 
 pub struct Typer {
-	pub chunk: Chunk,
+	chunk: Chunk,
 }
 
 impl Typer {

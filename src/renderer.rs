@@ -44,10 +44,12 @@ fn is_can_line_break(c: char) -> bool {
 
 struct Line<'a> {
 	glyphs: Vec<(ScaledGlyph<'a>, Chunk, char)>,
+	text_align: TextAlignHorizontal,
 	descent: f32,
 	height: f32,
-	width: f32,
-	text_align: TextAlignHorizontal,
+	chars_width: f32,
+	x: f32,
+	y: f32,
 }
 
 impl <'a> TextRenderer<'a> {
@@ -97,7 +99,7 @@ impl <'a> TextRenderer<'a> {
 	}
 
 
-	fn nwe_line(&mut self, line_width: f32) {
+	fn nwe_line(&mut self, chars_width: f32) {
 
 		let text_align = if self.current_line.len() == 0 {
 			TextAlignHorizontal::Left
@@ -121,10 +123,12 @@ impl <'a> TextRenderer<'a> {
 
 		self.lines.push(Line {
 			glyphs: self.current_line.clone(),
-			width: line_width,
+			chars_width: chars_width,
 			height: self.line_height,
 			descent: self.descent,
 			text_align,
+			x: 0.0,
+			y: 0.0,
 		});
 		self.current_line = Vec::new();
 		self.line_width = 0.0;
@@ -237,8 +241,8 @@ impl <'a> TextRenderer<'a> {
 		let w = self.line_width;
 		self.nwe_line(w);
 
-		for Line{width, height, ..} in self.lines.iter() {
-			println!("---- {}x{}", width.ceil() as usize, height.ceil() as usize);
+		for Line{chars_width, height, ..} in self.lines.iter() {
+			println!("---- {}x{}", chars_width.ceil() as usize, height.ceil() as usize);
 		}
 		println!("lines: {}", self.lines.len());
 
@@ -250,7 +254,7 @@ impl <'a> TextRenderer<'a> {
 			let mut l_width: f32 = 0.0;
 			self.lines
 				.iter()
-				.for_each(|Line{width, ..}| if *width > l_width { l_width = *width });
+				.for_each(|Line{chars_width, ..}| if *chars_width > l_width { l_width = *chars_width });
 			img_width =  l_width.ceil() as usize;
 		}
 
@@ -267,7 +271,7 @@ impl <'a> TextRenderer<'a> {
 		let mut color = [0,0,0,255];
 		let mut justify = 0.0;
 
-		for Line {glyphs, height, text_align, width, ..} in self.lines.iter_mut() {
+		for Line {glyphs, height, text_align, chars_width, ..} in self.lines.iter_mut() {
 
 			last_glyph_id = None;
 			caret.y += *height;
@@ -275,17 +279,17 @@ impl <'a> TextRenderer<'a> {
 
 			match text_align {
 				TextAlignHorizontal::Right => {
-					caret.x = (img_width as f32) - *width;
+					caret.x = (img_width as f32) - *chars_width;
 				}
 				TextAlignHorizontal::Center => {
-					caret.x = ((img_width as f32) - *width) / 2.0;
+					caret.x = ((img_width as f32) - *chars_width) / 2.0;
 				}
 				TextAlignHorizontal::Left => {
 					caret.x = 0.0;
 				}
 				TextAlignHorizontal::Justify => {
 					caret.x = 0.0;
-					let w = (img_width as f32) - *width;
+					let w = (img_width as f32) - *chars_width;
 					let spases: f32 = glyphs
 						.iter()
 						.map(|(_, _, c)| if is_can_line_break(*c) {1.0} else {0.0})
