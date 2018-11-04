@@ -20,7 +20,7 @@ pub struct TextRenderer<'a> {
 	pub padding: (usize, usize, usize, usize),
 
 	lines: Vec<Line<'a>>,
-	current_line: Vec<(ScaledGlyph<'a>, Chunk)>,
+	current_line: Vec<(ScaledGlyph<'a>, Chunk, char)>,
 	line_height: f32,
 	line_width: f32,
 	descent: f32,
@@ -43,10 +43,11 @@ fn is_can_line_break(c: char) -> bool {
 
 
 struct Line<'a> {
-	glyphs: Vec<(ScaledGlyph<'a>, Chunk)>,
+	glyphs: Vec<(ScaledGlyph<'a>, Chunk, char)>,
 	descent: f32,
 	height: f32,
 	width: f32,
+	text_align: TextAlignHorizontal,
 }
 
 impl <'a> TextRenderer<'a> {
@@ -97,11 +98,22 @@ impl <'a> TextRenderer<'a> {
 
 
 	fn nwe_line(&mut self, line_width: f32) {
+
+		let text_align = if self.current_line.len() == 0 {
+			TextAlignHorizontal::Left
+		} else {
+			match self.current_line[0].1.text_align {
+				Some(align) => align,
+				_ => TextAlignHorizontal::Left,
+			}
+		};
+
 		self.lines.push(Line {
 			glyphs: self.current_line.clone(),
 			width: line_width,
 			height: self.line_height,
 			descent: self.descent,
+			text_align,
 		});
 		self.current_line = Vec::new();
 		self.line_width = 0.0;
@@ -118,7 +130,7 @@ impl <'a> TextRenderer<'a> {
 		let mut v_metrics;
 		let mut scale = Scale::uniform(0.0);
 		let mut word_width = 0.0;
-		let mut current_word: Vec<(ScaledGlyph, Chunk)> = Vec::new();
+		let mut current_word: Vec<(ScaledGlyph, Chunk, char)> = Vec::new();
 
 		for chunk in &chunks {
 
@@ -131,8 +143,10 @@ impl <'a> TextRenderer<'a> {
 				if let Some(font_size) = chunk.font_size {
 					scale = Scale::uniform(font_size as f32 * dpi_factor);
 					v_metrics = font.v_metrics(scale);
-					self.line_height = self.line_height.max(v_metrics.line_gap + v_metrics.ascent);
-					self.descent = self.descent.min(v_metrics.descent);
+					if let Some(mul) = chunk.line_height {
+						self.line_height = self.line_height.max((v_metrics.line_gap + v_metrics.ascent) * mul);
+						self.descent = self.descent.min(v_metrics.descent);
+					}
 				}
 
 				let is_break = is_line_break(letter);
@@ -146,31 +160,42 @@ impl <'a> TextRenderer<'a> {
 				if self.width != 0 {
 					if self.break_word {
 
-						if self.line_width > self.width as f32 && is_can_line_break(letter) {
+						if is_break {
 							self.current_line.append(&mut current_word);
-							current_word = Vec::new();
-							word_width = 0.0;
-
-							// new line
 							let w = self.line_width - h_metrics.advance_width;
 							self.nwe_line(w);
+							current_word = Vec::new();
+							word_width = 0.0;
 						} else if self.line_width > self.width as f32 {
-							// new line
-							let w = self.line_width - h_metrics.advance_width - word_width;
-							self.nwe_line(w);
+							if is_can_line_break(letter) {
+								self.current_line.append(&mut current_word);
+								current_word = Vec::new();
+								word_width = 0.0;
 
-							current_word.push((glyph, chunk.duplicate()));
-							word_width+=h_metrics.advance_width;
-						} else if is_break {
-							self.current_line.append(&mut current_word);
-							let w = self.line_width - h_metrics.advance_width;
-							self.nwe_line(w);
-							// self.current_line.push((glyph, chunk.duplicate()));
-							current_word = Vec::new();
-							word_width = 0.0;
+								let w = self.line_width - h_metrics.advance_width;
+								self.nwe_line(w);
+							} else {
+								current_word.push((glyph, chunk.duplicate(), letter));
+								word_width += h_metrics.advance_width;
+
+								let w = self.line_width - word_width;
+								self.nwe_line(w);
+
+								self.current_line.append(&mut current_word);
+								self.line_width += word_width;
+								current_word = Vec::new();
+								word_width = 0.0;
+							}
 						} else {
-							current_word.push((glyph, chunk.duplicate()));
-							word_width += h_metrics.advance_width;
+							if is_can_line_break(letter) {
+								self.current_line.append(&mut current_word);
+								current_word = Vec::new();
+								word_width = 0.0;
+								self.current_line.push((glyph, chunk.duplicate(), letter));
+							} else {
+								current_word.push((glyph, chunk.duplicate(), letter));
+								word_width+=h_metrics.advance_width;
+							}
 						}
 					} else {
 						if is_break {
@@ -181,11 +206,11 @@ impl <'a> TextRenderer<'a> {
 							self.nwe_line(w);
 
 							if !is_can_line_break(letter) {
-								self.current_line.push((glyph, chunk.duplicate()));
+								self.current_line.push((glyph, chunk.duplicate(), letter));
 								self.line_width += h_metrics.advance_width;
 							}
 						} else {
-							self.current_line.push((glyph, chunk.duplicate()));
+							self.current_line.push((glyph, chunk.duplicate(), letter));
 						}
 					}
 				} else if is_break {
@@ -193,7 +218,7 @@ impl <'a> TextRenderer<'a> {
 					self.nwe_line(w);
 					// self.current_line.push((glyph, chunk.duplicate()));
 				} else {
-					self.current_line.push((glyph, chunk.duplicate()));
+					self.current_line.push((glyph, chunk.duplicate(), letter));
 				}
 			}
 		}
@@ -229,14 +254,36 @@ impl <'a> TextRenderer<'a> {
 		let mut buffer = ImgBuffer::new(img_width, img_height, &self.background);
 		let mut last_glyph_id = None;
 		let mut color = [0,0,0,255];
+		let mut justify = 0.0;
 
-		for Line {glyphs, height, ..} in self.lines.iter_mut() {
+		for Line {glyphs, height, text_align, width, ..} in self.lines.iter_mut() {
 
 			last_glyph_id = None;
 			caret.y += *height;
-			caret.x = 0.0;
+			justify = 0.0;
 
-			for (scaled_glyph, chunk) in glyphs.drain(..) {
+			match text_align {
+				TextAlignHorizontal::Right => {
+					caret.x = (img_width as f32) - *width;
+				}
+				TextAlignHorizontal::Center => {
+					caret.x = ((img_width as f32) - *width) / 2.0;
+				}
+				TextAlignHorizontal::Left => {
+					caret.x = 0.0;
+				}
+				TextAlignHorizontal::Justify => {
+					caret.x = 0.0;
+					let w = (img_width as f32) - *width;
+					let spases: f32 = glyphs
+						.iter()
+						.map(|(_, _, c)| if is_can_line_break(*c) {1.0} else {0.0})
+						.sum();
+					justify = w / spases;
+				}
+			}
+
+			for (scaled_glyph, chunk, letter, ..) in glyphs.drain(..) {
 				if !eq_font(&current_font_name, &chunk.font) {
 					font = TextRenderer::find_font(&chunk.font, fonts);
 					current_font_name = chunk.font.clone();
@@ -244,6 +291,12 @@ impl <'a> TextRenderer<'a> {
 
 				if let Some(id) = last_glyph_id {
 					caret.x += font.pair_kerning(scale, id, scaled_glyph.id());
+				}
+
+				if *text_align == TextAlignHorizontal::Justify {
+					if is_can_line_break(letter) {
+						caret.x += justify;
+					}
 				}
 
 				let mut glyph = scaled_glyph.positioned(caret);

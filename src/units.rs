@@ -24,7 +24,7 @@ impl ImgBuffer {
 	}
 
 	pub fn get_pixel_mut(&mut self, x: usize, y: usize) -> &mut [u8] {
-		let i = ((y-1)*(self.width*4)) + (x*4);
+		let i =  y * (self.width*4) + (x * 4);
 		&mut self.buffer[i..(i+4)]
 	}
 

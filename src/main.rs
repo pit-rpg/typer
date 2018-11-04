@@ -41,7 +41,7 @@ fn main() {
 
 	let mut renderer = TextRenderer::new();
 	renderer.width = 600;
-	// renderer.break_word = true;
+	renderer.break_word = true;
 
 
 	let buffer = renderer.render(chunks, &fonts, 1.0);

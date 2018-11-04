@@ -7,6 +7,7 @@ pub enum TextAlignHorizontal {
 	Left,
 	Right,
 	Center,
+	Justify,
 }
 
 
@@ -15,8 +16,9 @@ pub struct Chunk {
 	pub bold: Option<bool>,
 	pub italic: Option<bool>,
 	pub font_size: Option<usize>,
+	pub line_height: Option<f32>,
 	pub color: Option<ColorRGBA>,
-	pub text_align_horizontal: Option<TextAlignHorizontal>,
+	pub text_align: Option<TextAlignHorizontal>,
 	pub font: Option<String>,
 	pub string: String,
 }
@@ -30,20 +32,31 @@ impl Chunk {
 			italic: None,
 			font_size: None,
 			color: None,
-			text_align_horizontal: None,
+			text_align: None,
 			font: None,
+			line_height: None,
 			string: "".to_string(),
 		}
 	}
 
 	pub fn set_attribute(&mut self, key: &str, val: &str) {
 		match key {
-			"font_size" 	=> { self.font_size = Some(val.parse::<usize>().unwrap()) }
+			"font-size" 	=> { self.font_size = Some(val.parse::<usize>().unwrap()) }
+			"line-height" 	=> { self.line_height = Some(val.parse::<f32>().unwrap()) }
 			"font" 			=> { self.font = Some(val.to_string()) }
 			"bold" 			=> {
 				match val {
 					"true"|"TRUE"|"1"|"yes" 	=> { self.bold = Some(true) }
 					"false"|"FALSE"|"0"|"no" 	=> { self.bold = Some(false) }
+					_ => {}
+				}
+			}
+			"text-align" 			=> {
+				match val {
+					"left"|"LEFT" 		=> { self.text_align = Some(TextAlignHorizontal::Left) }
+					"right"|"RIGHT" 	=> { self.text_align = Some(TextAlignHorizontal::Right) }
+					"center"|"CENTER" 	=> { self.text_align = Some(TextAlignHorizontal::Center) }
+					"justify"|"JUSTIFY" => { self.text_align = Some(TextAlignHorizontal::Justify) }
 					_ => {}
 				}
 			}
@@ -82,11 +95,13 @@ impl Chunk {
 
 	pub fn patch(&mut self, other: &Self) -> &mut Self {
 
-		if other.font_size != None 	{self.font_size = other.font_size;}
-		if other.bold != None 		{self.bold = other.bold;}
-		if other.italic != None 	{self.italic = other.italic;}
-		if other.color != None 		{self.color = other.color;}
-		if other.font != None 		{self.font = other.font.clone();}
+		if other.font_size != None 		{self.font_size = other.font_size;}
+		if other.bold != None 			{self.bold = other.bold;}
+		if other.italic != None 		{self.italic = other.italic;}
+		if other.color != None 			{self.color = other.color;}
+		if other.font != None 			{self.font = other.font.clone();}
+		if other.line_height != None 	{self.line_height = other.line_height.clone();}
+		if other.text_align != None 	{self.text_align = other.text_align.clone();}
 
 		self
 	}
@@ -106,8 +121,9 @@ impl Default for Chunk {
 			bold: Some(false),
 			italic: Some(false),
 			font_size: Some(10),
+			line_height: Some(1.0),
 			color: Some( [0, 0, 0, 255] ),
-			text_align_horizontal: Some(TextAlignHorizontal::Left),
+			text_align: Some(TextAlignHorizontal::Left),
 			font: None,
 			string: "".to_string(),
 		}
