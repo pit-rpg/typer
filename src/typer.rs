@@ -2,80 +2,89 @@ use std::io::BufReader;
 use xml::reader::{EventReader, XmlEvent};
 use chunk::*;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum Tags {
-	S,
-	B,
-	I,
-}
-
-impl Tags {
-
-	pub fn new (tag: &str) -> Self {
-		// let chunk = Chunk::new();
-		match tag {
-			"b" 	=> {Tags::B}
-			"i" 	=> {Tags::I}
-			_ 		=> {Tags::S}
-		}
-	}
-
-	pub fn cet_chunk(&self) -> Chunk {
-		let mut chunk = Chunk::new();
-		match self {
-			Tags::B => chunk.bold = Some(true),
-			Tags::I => chunk.italic = Some(true),
-			_ => {},
-		}
-		chunk
-	}
-}
-
-
 pub struct Typer {
-	chunk: Chunk,
+	chunk: FormatChunk,
+	block: FormatBlock,
 }
 
 impl Typer {
 
 	pub fn new() -> Self {
 		Self {
-			chunk: Chunk::default(),
+			chunk: FormatChunk::new(),
+			block: FormatBlock::new(),
 		}
 	}
 
 
-	pub fn parse(&mut self, xml_string: &str) -> Vec<Chunk> {
+	pub fn parse(&mut self, xml_string: &str) -> Vec<FormatBlock> {
 
 		let file = BufReader::new(xml_string.as_bytes());
 		let parser = EventReader::new(file);
+		
+		let mut blocks: Vec<FormatBlock> = Vec::new();
+		let mut level: usize = 0;
 
-		let mut current_chunk 					= self.chunk.clone();
-		let mut chunks_stack: Vec<Chunk> 				= Vec::new();
-		let mut chunks: Vec<Chunk> 	= Vec::new();
+		fn get_chunk<'a>(chunk: &'a mut FormatChunk, level:usize) -> Option<&'a mut FormatChunk> {
+			if level == 0 {
+				return Some(chunk);
+			}
+			let elem = chunk.chunks
+				.iter_mut()
+				.filter(|e| if let FormatChunks::Chunk(_) = e {true} else {false})
+				.last()
+				.unwrap();
+
+			if let FormatChunks::Chunk(chunk) = elem {
+				return get_chunk(chunk, level-1);
+			}
+			None
+		}
 
 		for e in parser {
-			println!("{:?}", e);
+
 			match e {
 				Ok( XmlEvent::StartElement { name, attributes, .. } ) => {
-					let tag = Tags::new(&name.local_name);
-					let mut chunk = tag.cet_chunk();
-					for attribute in attributes {
-						chunk.set_attribute(&attribute.name.local_name, &attribute.value);
+					match &name.local_name[..] {
+						"block" => {
+							level = 0;
+							blocks.push(self.block.new_empty());
+						}
+						"s" => {
+							let block = blocks
+								.last_mut()
+								.expect("uou mast create <block> for <s>");
+							
+							let chunk = get_chunk(&mut block.chunk, level)
+								.unwrap();
+							let mut new_chunk = chunk.new_empty();
+							for attribute in attributes {
+								new_chunk.set_attribute(&attribute.name.local_name, &attribute.value);
+							}
+							chunk.chunks.push(FormatChunks::Chunk(new_chunk));
+							level += 1;
+						}
+						_=>{}
 					}
-					let mut new_chunk = Chunk::new();
-					new_chunk.patch(&current_chunk).patch(&chunk);
-					chunks_stack.push(current_chunk);
-					current_chunk = new_chunk;
 				}
-				Ok( XmlEvent::EndElement{..} ) => {
-					current_chunk = chunks_stack.pop().unwrap();
+				Ok( XmlEvent::EndElement{name, ..} ) => {
+					match &name.local_name[..] {
+						"block" => {
+							level = 0;
+						}
+						"s" => {
+							level -= 1;
+						}
+						_=>{}
+					}
 				}
 				Ok( XmlEvent::Characters(str_chunks) ) | Ok( XmlEvent::Whitespace(str_chunks) ) => {
-					let mut new_chunk = Chunk::new();
-					new_chunk.patch(&current_chunk);
-					new_chunk.string = str_chunks;
-					chunks.push( new_chunk );
+					let block = blocks
+						.last_mut()
+						.expect("text must by in <s>");
+
+					let chunk = get_chunk(&mut block.chunk, level).unwrap();
+					chunk.chunks.push(FormatChunks::String(str_chunks));
 				}
 				Err(e) => {
 					println!("Error: {}", e);
@@ -84,10 +93,9 @@ impl Typer {
 				_ => {}
 			}
 		}
-
-		println!("{:?}", chunks);
-		println!("{:?}", chunks_stack);
-		chunks
+		
+		println!("{:?}", blocks);
+		blocks
 	}
 
 }

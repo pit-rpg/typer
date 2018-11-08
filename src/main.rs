@@ -5,12 +5,13 @@ extern crate image;
 mod chunk;
 mod typer;
 mod units;
-mod renderer;
+// mod renderer;
+mod rusttype_renderer;
 
 use chunk::*;
 use typer::*;
 use units::*;
-use renderer::*;
+use rusttype_renderer::*;
 
 use std::fs::{File};
 use std::path::{PathBuf};
@@ -30,7 +31,7 @@ fn main() {
 	let mut data = String::new();
 	file.read_to_string(&mut data).unwrap();
 
-	let chunks = typer.parse(&data);
+	let blocks = typer.parse(&data);
 
 	//  let font_data = include_bytes!("../fonts/wqy-microhei/WenQuanYiMicroHei.ttf");
     // This only succeeds if collection consists of one font
@@ -39,15 +40,15 @@ fn main() {
 	let fonts = vec![("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf"))];
 	let fonts = TextRenderer::load_fonts(fonts);
 
-	let mut renderer = TextRenderer::new();
-	renderer.width = 600;
-	renderer.break_word = true;
+	let mut renderer = TextRenderer::new(&fonts);
+	// renderer.width = 600;
+	// renderer.break_word = true;
 
 
-	let buffer = renderer.render(chunks, &fonts, 1.0);
+	let buffer = renderer.render(blocks, 1.0);
 
-	let mut imgbuf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
-	imgbuf.save("image_example.png").unwrap();
+	// let mut imgbuf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
+	// imgbuf.save("image_example.png").unwrap();
 
 
 
