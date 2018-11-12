@@ -22,35 +22,9 @@ pub enum FormatChunks {
 
 
 #[derive(Debug)]
-pub struct FormatChunk {
-	pub font_size: usize,
-	pub line_height: f32,
-	pub color: ColorRGBA,
-	// pub text_align: TextAlignHorizontal,
-	pub font: Option<String>,
-	// pub width: Option<usize>,
-	pub chunks: Vec<FormatChunks>,
-}
-
-#[derive(Debug)]
 pub struct RenderChunk {
-	// pub font_size: usize,
 	pub line_height: f32,
 	pub color: ColorRGBA,
-	// pub text_align: TextAlignHorizontal,
-	// pub font: Option<String>,
-	// pub width: Option<usize>,
-	// pub chunks: Vec<FormatChunks>,
-}
-
-#[derive(Debug)]
-pub struct FormatBlock {
-	pub text_align: TextAlignHorizontal,
-	pub width: f32,
-	pub height: f32,
-	pub x: f32,
-	pub y: f32,
-	pub chunk: FormatChunk,
 }
 
 
@@ -64,15 +38,6 @@ pub struct Layout<'a> {
 }
 
 impl <'a> Layout<'a> {
-	// pub fn new() -> Self {
-	// 	Self {
-	// 		blocks: Vec::new(),
-	// 		width: 0.0,
-	// 		height: 0.0,
-	// 		x: 0.0,
-	// 		y: 0.0,
-	// 	}
-	// }
 
 	pub fn calk_view(&mut self) {
 		let mut width = - std::f32::MAX;
@@ -111,6 +76,16 @@ impl <'a> Layout<'a> {
 		self.x = x;
 		self.y = y;
 	}
+}
+
+
+#[derive(Debug)]
+pub struct FormatChunk {
+	pub font_size: usize,
+	pub line_height: f32,
+	pub color: ColorRGBA,
+	pub font: Option<String>,
+	pub chunks: Vec<FormatChunks>,
 }
 
 
@@ -161,9 +136,7 @@ impl FormatChunk {
 			font_size: self.font_size,
 			line_height: self.line_height,
 			color: self.color,
-			// text_align: self.text_align,
 			font: None,
-			// width: None,
 			chunks: Vec::new(),
 		};
 
@@ -192,7 +165,15 @@ impl FormatChunk {
 }
 
 
-
+#[derive(Debug)]
+pub struct FormatBlock {
+	pub text_align: TextAlignHorizontal,
+	pub width: f32,
+	pub height: f32,
+	pub x: f32,
+	pub y: f32,
+	pub chunk: FormatChunk,
+}
 
 
 impl FormatBlock {
@@ -268,9 +249,6 @@ pub struct Line<'a> {
 	pub height: f32,
 	pub chars_width: f32,
 	pub glyphs: Vec<(ScaledGlyph<'a>, RenderChunk, char, f32)>,
-	// text_align: TextAlignHorizontal,
-	// x: f32,
-	// y: f32,
 }
 
 impl <'a> Line<'a> {
@@ -287,21 +265,16 @@ impl <'a> Line<'a> {
 }
 
 
-
 #[derive(Debug)]
 pub struct RenderBlock<'a> {
-	// pub format_block: &'a FormatBlock,
 	pub lines: Vec<Line<'a>>,
 	pub text_align: TextAlignHorizontal,
-
-	// pub text_align: TextAlignHorizontal,
 	pub width: f32,
 	pub height: f32,
 	pub x: f32,
 	pub y: f32,
-
-	// pub chunk: FormatChunk,
 }
+
 
 impl <'a> RenderBlock<'a> {
 
@@ -363,34 +336,4 @@ impl <'a> Iterator for FormatChunkIter<'a> {
 			}
 		}
 	}
-	// fn next (&mut self) -> Option<Self::Item> {
-	// 	if self.chunk.chunks.len() == self.index {return None};
-
-	// 	let mut is_chunk = false;
-	// 	if let FormatChunks::Chunk(_) = self.chunk.chunks[self.index] {
-	// 		is_chunk = true;
-	// 	}
-
-	// 	if is_chunk {
-	// 		if self.sub_iter.is_none() {
-	// 			if let FormatChunks::Chunk(c) = &self.chunk.chunks[self.index] {
-	// 				let iter = c.iter();
-	// 				self.sub_iter = Some(Box::new(iter));
-	// 			} 
-	// 		}
-	// 		let mut data = None;
-	// 		if let Some(c) = &mut self.sub_iter {
-	// 			data = c.next();
-	// 		}
-	// 		if data.is_none() {
-	// 			self.index += 1;
-	// 			return self.next();
-	// 		} else {
-	// 			return data;
-	// 		}
-	// 	} else {
-	// 		self.index += 1;
-	// 		return Some(&self.chunk.chunks[self.index-1]);
-	// 	}
-	// }
 }

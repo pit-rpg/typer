@@ -3,24 +3,16 @@ extern crate unicode_normalization;
 
 use std::path::PathBuf;
 use std::char;
+use std::cmp::Ordering;
+use units::ColorRGBA;
 use self::rusttype::{ScaledGlyph, PositionedGlyph, Glyph, GlyphId, GlyphIter, Scale};
 use self::unicode_normalization::UnicodeNormalization;
 use super::*;
-use std::cmp::Ordering;
 
-
-// use std::cmp::Ordering;
-
-use units::ColorRGBA;
 
 pub struct TextRenderer {
-// pub struct TextRenderer<'a> {
 	pub break_word: bool,
 	pub padding: (usize, usize, usize, usize),
-	// pub fonts: &'a[(String, Font<'a>)],
-
-	// lines: Vec<Line<'a>>,
-	// current_line: Vec<(ScaledGlyph<'a>, Chunk, char)>,
 	line_height: f32,
 	line_width: f32,
 	descent: f32,
@@ -42,36 +34,11 @@ pub fn is_can_line_break(c: char) -> bool {
 }
 
 
-// struct Line<'a> {
-// 	glyphs: Vec<(ScaledGlyph<'a>, Chunk, char)>,
-// 	text_align: TextAlignHorizontal,
-// 	descent: f32,
-// 	height: f32,
-// 	chars_width: f32,
-// 	x: f32,
-// 	y: f32,
-// }
-// struct Line {
-// struct Line<'a> {
-// 	pub width: f32,
-// 	pub descent: f32,
-// 	pub height: f32,
-// 	pub chars_width: f32,
-// 	pub glyphs: Vec<(ScaledGlyph<'a>, &'a FormatChunk, char)>,
-// 	// text_align: TextAlignHorizontal,
-// 	// x: f32,
-// 	// y: f32,
-// }
-
 impl TextRenderer {
-// impl <'a> TextRenderer<'a> {
 	pub fn new () -> Self {
 		Self {
 			break_word: false,
 			padding: (0, 0, 0, 0),
-			// fonts,
-			// lines: Vec::new(),
-			// current_line: Vec::new(),
 			line_height: 0.0,
 			line_width: 0.0,
 			descent: 0.0,
@@ -108,84 +75,6 @@ impl TextRenderer {
 	}
 
 
-	// fn nwe_line(&mut self, chars_width: f32) {
-
-	// 	let text_align = if self.current_line.len() == 0 {
-	// 		TextAlignHorizontal::Left
-	// 	} else {
-	// 		match self.current_line[0].1.text_align {
-	// 			Some(align) => align,
-	// 			_ => TextAlignHorizontal::Left,
-	// 		}
-	// 	};
-
-	// 	let mut white_space = false;
-	// 	{
-	// 		if self.current_line.len() != 0 {
-	// 			let (_, _, c) = self.current_line.last().unwrap();
-	// 			white_space = is_can_line_break(*c);
-	// 		}
-	// 	}
-	// 	if white_space {
-	// 		self.current_line.pop();
-	// 	}
-
-	// 	self.lines.push(Line {
-	// 		glyphs: self.current_line.clone(),
-	// 		chars_width: chars_width,
-	// 		height: self.line_height,
-	// 		descent: self.descent,
-	// 		text_align,
-	// 		x: 0.0,
-	// 		y: 0.0,
-	// 	});
-	// 	self.current_line = Vec::new();
-	// 	self.line_width = 0.0;
-	// 	self.line_height = 0.0;
-	// 	self.descent = 0.0
-	// }
-
-
-	fn traverse <F: FnMut(&FormatChunks, &FormatChunk) > (&self, chunk: &FormatChunk, cb: &mut F) {
-		// println!("{:?}", chunk);
-		// let mut font = f;
-		// if chunk.font != *f_name {
-		// 	font = self.find_font(f_name);
-		// }
-
-		for chunk_i in &chunk.chunks {
-			match chunk_i {
-				// FormatChunks::String(s) => {
-				// 	// for symbol in s.chars() {
-
-				// 	// 	// block.add_symbol(chunk, symbol, font);
-				// 	// }
-				// }
-				FormatChunks::Chunk(chunk_e) => {
-					self.traverse(chunk_e, cb);
-				}
-				_=>{}
-			}
-			cb(chunk_i, chunk);
-		}
-
-	}
-	// fn traverse<F:Fn(&str, &FormatChunk, &mut Line)> (chunk: &FormatChunk, cb: &mut F, block: &mut RenderBlock) {
-	// 	// println!("{:?}", chunk);
-	// 	for chunk_i in &chunk.chunks {
-	// 		match chunk_i {
-	// 			FormatChunks::String(s) => {
-	// 				cb(s, chunk, block);
-	// 			}
-	// 			FormatChunks::Chunk(chunk_e) => {
-	// 				Self::traverse(chunk_e, cb, block);
-	// 			}
-	// 		}
-	// 	}
-
-	// }
-
-
 	pub fn render<'a>(&mut self, format_blocks: Vec<FormatBlock>, dpi_factor: f32, fonts: &'a[(String, Font<'a>)]) {
 
 		let mut layout = Layout {
@@ -206,7 +95,6 @@ impl TextRenderer {
 			println!("------------------BLOCK-------------------");
 
 			let mut render_block = block.to_render_block();
-			// let mut line = Line::n/ew();
 
 			for (chunk, str_data) in block.chunk.iter() {
 				if chunk.font != current_font_name {

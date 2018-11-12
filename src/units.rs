@@ -36,7 +36,7 @@ impl ImgBuffer {
 		o_pixel[3] = pixel[3];
 	}
 
-	pub fn put_pixel_alpha_blend(&mut self, x:usize ,y:usize, pixel: &[u8;4], v:f32) {
+	pub fn blend_pixel (&mut self, x:usize ,y:usize, pixel: &[u8;4], v:f32) {
 		if x > self.width 	{return;}
 		if y > self.height 	{return;}
 
