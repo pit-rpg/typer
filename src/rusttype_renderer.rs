@@ -12,11 +12,11 @@ use super::*;
 
 use units::ColorRGBA;
 
-pub struct TextRenderer<'a> {
+pub struct TextRenderer {
 // pub struct TextRenderer<'a> {
 	pub break_word: bool,
 	pub padding: (usize, usize, usize, usize),
-	pub fonts: &'a[(String, Font<'a>)],
+	// pub fonts: &'a[(String, Font<'a>)],
 
 	// lines: Vec<Line<'a>>,
 	// current_line: Vec<(ScaledGlyph<'a>, Chunk, char)>,
@@ -62,13 +62,13 @@ pub fn is_can_line_break(c: char) -> bool {
 // 	// y: f32,
 // }
 
-impl <'a> TextRenderer<'a> {
+impl TextRenderer {
 // impl <'a> TextRenderer<'a> {
-	pub fn new (fonts: &'a[(String, Font<'a>)]) -> Self {
+	pub fn new () -> Self {
 		Self {
 			break_word: false,
 			padding: (0, 0, 0, 0),
-			fonts,
+			// fonts,
 			// lines: Vec::new(),
 			// current_line: Vec::new(),
 			line_height: 0.0,
@@ -78,7 +78,7 @@ impl <'a> TextRenderer<'a> {
 	}
 
 
-	pub fn load_fonts(data: Vec<(String, PathBuf)>) -> Vec<(String, Font<'a>)> {
+	pub fn load_fonts <'a>(data: Vec<(String, PathBuf)>) -> Vec<(String, Font<'a>)> {
 		let mut result = Vec::with_capacity(data.len());
 		for (name, path) in data {
 			let mut f = File::open(path).expect("wrong font path");
@@ -91,17 +91,17 @@ impl <'a> TextRenderer<'a> {
 	}
 
 
-	fn find_font(&self, name: &Option<String>) -> &'a Font<'a> {
+	fn find_font<'a>(&self, name: &Option<String>, fonts: &'a[(String, Font<'a>)] ) -> &'a Font<'a> {
 		match name {
-			None => {&self.fonts[0].1}
+			None => {&fonts[0].1}
 			Some(font_name) => {
-				let res = self.fonts
+				let res = fonts
 					.iter()
 					.find(|(name, _)| name == font_name );
 				if let Some(font) = res {
 					return &font.1;
 				}
-				&self.fonts[0].1
+				&fonts[0].1
 			}
 		}
 	}
@@ -185,84 +185,125 @@ impl <'a> TextRenderer<'a> {
 	// }
 
 
-	pub fn render(&mut self, format_blocks: Vec<FormatBlock>, dpi_factor: f32) {
+	pub fn render<'a>(&mut self, format_blocks: Vec<FormatBlock>, dpi_factor: f32, fonts: &'a[(String, Font<'a>)]) {
 
 		let mut layout = Layout {
 			blocks: Vec::with_capacity(format_blocks.len()),
 		};
 
 		let mut current_font_name = Some("".to_string());
-		let mut font = self.find_font(&current_font_name);
+		let mut font = self.find_font(&current_font_name, fonts);
 		let mut scale = Scale::uniform(0.0);
 		let mut line_width = 0.0;
+		// let mut prev_glyph_id = None;
 
         for block in format_blocks {
 			println!("------------------BLOCK-------------------");
 
 			let mut render_block = RenderBlock::new();
+			// let mut line = Line::n/ew();
 
-			// let mut line = Line {
-			// 	width: 0.0,
-			// 	descent: 0.0,
-			// 	height: 0.0,
-			// 	chars_width: 0.0,
-			// 	glyphs: Vec::new(),
-			// 	// glyphs: Vec<(ScaledGlyph<'a>, &'a FormatChunk, char)>,
-			// };
-
-			self.traverse(&block.chunk, &mut |chunk, parent_chunk| {
-				if parent_chunk.font != current_font_name {
-					font = self.find_font(&current_font_name);
-					current_font_name = parent_chunk.font.clone();
+			for (chunk, str_data) in block.chunk.iter() {
+				if chunk.font != current_font_name {
+					font = self.find_font(&current_font_name, fonts);
+					current_font_name = chunk.font.clone();
 				}
 
-				match chunk {
-					FormatChunks::String(str_data) => {
-						print!("{}", str_data);
+				scale = Scale::uniform(chunk.font_size as f32 * dpi_factor);
+				let v_metrics = font.v_metrics(scale);
 
-						for symbol in str_data.chars() {
-
-							scale = Scale::uniform(parent_chunk.font_size as f32 * dpi_factor);
-							let v_metrics = font.v_metrics(scale);
-
-							let line_break_symbol = is_line_break(symbol);
-							if line_break_symbol {
-								render_block.add_line();
-							}
-							let line = render_block.get_line();
-
-							line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * parent_chunk.line_height );
-							line.descent = line.descent.min(v_metrics.descent);
-
-							if line_break_symbol {return;}
-
-							let base_glyph = font.glyph(symbol);
-							let mut glyph = base_glyph.scaled(scale);
-
-							if block.width == 0.0 {
-								line.glyphs.push((glyph, parent_chunk, symbol));
-								return;
-							}
-
-
-
-							// let h_metrics = glyph.h_metrics();
-							// line_width += h_metrics.advance_width;
-							// // TODO: pair symbols font kerning
-
-							// if line_width > block.width {
-
-							// }
-
-
-
-
-						}
+				for symbol in str_data.chars() {
+					let line_break_symbol = is_line_break(symbol);
+					if line_break_symbol {
+						render_block.add_line();
+						// prev_glyph_id = None;
+						continue;
 					}
-					FormatChunks::Chunk(_) => {}
+
+					let line = render_block.get_line();
+
+					line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * chunk.line_height );
+					line.descent = line.descent.min(v_metrics.descent);
+
+					let base_glyph = font.glyph(symbol);
+					let mut glyph = base_glyph.scaled(scale);
+					let h_metrics = glyph.h_metrics();
+					let symbol_width = h_metrics.advance_width;
+
+					// if let Some(id) = prev_glyph_id {
+					// 	symbol_width += font.pair_kerning(scale, id, glyph.id());
+					// }
+					// prev_glyph_id = Some(glyph.id());
+
+
+					if block.width == 0.0 {
+						line.glyphs.push((glyph, chunk, symbol));
+						continue;
+					} else {
+						
+					}
+
+
+
+
+
 				}
-				println!("---");
-			});
+
+
+				print!("{}", str_data);
+			}
+
+
+			// self.traverse(&block.chunk, &mut |chunk, parent_chunk| {
+
+
+			// 	match chunk {
+			// 		FormatChunks::String(str_data) => {
+			// 			print!("{}", str_data);
+
+			// 			for symbol in str_data.chars() {
+
+			// 				scale = Scale::uniform(parent_chunk.font_size as f32 * dpi_factor);
+			// 				let v_metrics = font.v_metrics(scale);
+
+			// 				let line_break_symbol = is_line_break(symbol);
+			// 				if line_break_symbol {
+			// 					render_block.add_line();
+			// 				}
+			// 				let line = render_block.get_line();
+
+			// 				line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * parent_chunk.line_height );
+			// 				line.descent = line.descent.min(v_metrics.descent);
+
+			// 				if line_break_symbol {return;}
+
+			// 				let base_glyph = font.glyph(symbol);
+			// 				let mut glyph = base_glyph.scaled(scale);
+
+			// 				if block.width == 0.0 {
+			// 					// line.glyphs.push((glyph, parent_chunk, symbol));
+			// 					return;
+			// 				}
+
+
+
+			// 				// let h_metrics = glyph.h_metrics();
+			// 				// line_width += h_metrics.advance_width;
+			// 				// // TODO: pair symbols font kerning
+
+			// 				// if line_width > block.width {
+
+			// 				// }
+
+
+
+
+			// 			}
+			// 		}
+			// 		FormatChunks::Chunk(_) => {}
+			// 	}
+			// 	println!("---");
+			// });
 
 
 

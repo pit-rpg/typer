@@ -40,12 +40,12 @@ fn main() {
 	let fonts = vec![("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf"))];
 	let fonts = TextRenderer::load_fonts(fonts);
 
-	let mut renderer = TextRenderer::new(&fonts);
+	let mut renderer = TextRenderer::new();
 	// renderer.width = 600;
 	// renderer.break_word = true;
 
 
-	let buffer = renderer.render(blocks, 1.0);
+	let buffer = renderer.render(blocks, 1.0, &fonts);
 
 	// let mut imgbuf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
 	// imgbuf.save("image_example.png").unwrap();

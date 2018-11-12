@@ -109,6 +109,15 @@ impl FormatChunk {
 
 		res
 	}
+
+
+	pub fn iter(&self) -> FormatChunkIter {
+		FormatChunkIter{
+			index: 0,
+			chunk: self,
+			sub_iter: None,
+		}
+	}
 }
 
 
@@ -225,21 +234,72 @@ impl <'a> RenderBlock<'a> {
 	pub fn get_line(&mut self) -> &mut Line<'a> {
 		self.lines.last_mut().unwrap()
 	}
+}
 
-	// pub fn add_symbol(&mut self, shunk: &FormatChunk, c: char, font: &Font ) {
 
-	// 	if is_line_break(c) {
-	// 		self.add_line();
-	// 		return;
+pub struct FormatChunkIter<'a> {
+	index: usize,
+	chunk: &'a FormatChunk,
+	sub_iter: Option<Box<FormatChunkIter<'a>>>,
+}
+
+
+impl <'a> Iterator for FormatChunkIter<'a> {
+	type Item = (&'a FormatChunk, &'a str);
+
+	fn next (&mut self) -> Option<Self::Item> {
+		if self.chunk.chunks.len() == self.index {return None};
+
+		match &self.chunk.chunks[self.index] {
+			FormatChunks::String(s) => {
+				self.index += 1;
+				Some((self.chunk, s))
+			}
+			FormatChunks::Chunk(chunk) => {
+				if self.sub_iter.is_none() {
+					if let FormatChunks::Chunk(c) = &self.chunk.chunks[self.index] {
+						let iter = c.iter();
+						self.sub_iter = Some(Box::new(iter));
+					} 
+				}
+				let data = self.sub_iter.as_mut().unwrap().next();
+				if data.is_none() {
+					self.index+=1;
+					self.next()
+				} else {
+					data
+				}
+			}
+		}
+	}
+	// fn next (&mut self) -> Option<Self::Item> {
+	// 	if self.chunk.chunks.len() == self.index {return None};
+
+	// 	let mut is_chunk = false;
+	// 	if let FormatChunks::Chunk(_) = self.chunk.chunks[self.index] {
+	// 		is_chunk = true;
 	// 	}
 
-	// 	let line = self.lines.last_mut().unwrap();
-
-	// 	// if self.width == 0.0 {
-
-	// 	// }
-
-
-	// 	print!("{}", c);
+	// 	if is_chunk {
+	// 		if self.sub_iter.is_none() {
+	// 			if let FormatChunks::Chunk(c) = &self.chunk.chunks[self.index] {
+	// 				let iter = c.iter();
+	// 				self.sub_iter = Some(Box::new(iter));
+	// 			} 
+	// 		}
+	// 		let mut data = None;
+	// 		if let Some(c) = &mut self.sub_iter {
+	// 			data = c.next();
+	// 		}
+	// 		if data.is_none() {
+	// 			self.index += 1;
+	// 			return self.next();
+	// 		} else {
+	// 			return data;
+	// 		}
+	// 	} else {
+	// 		self.index += 1;
+	// 		return Some(&self.chunk.chunks[self.index-1]);
+	// 	}
 	// }
 }
