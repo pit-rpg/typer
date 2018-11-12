@@ -33,6 +33,17 @@ pub struct FormatChunk {
 }
 
 #[derive(Debug)]
+pub struct RenderChunk {
+	// pub font_size: usize,
+	pub line_height: f32,
+	pub color: ColorRGBA,
+	// pub text_align: TextAlignHorizontal,
+	// pub font: Option<String>,
+	// pub width: Option<usize>,
+	// pub chunks: Vec<FormatChunks>,
+}
+
+#[derive(Debug)]
 pub struct FormatBlock {
 	pub text_align: TextAlignHorizontal,
 	pub width: f32,
@@ -46,7 +57,60 @@ pub struct FormatBlock {
 #[derive(Debug)]
 pub struct Layout<'a> {
 	pub blocks: Vec<(FormatBlock, RenderBlock<'a>)>,
-	// pub render_blocks: Vec<RenderBlock<'a>>,
+	pub width: f32,
+	pub height: f32,
+	pub x: f32,
+	pub y: f32,
+}
+
+impl <'a> Layout<'a> {
+	// pub fn new() -> Self {
+	// 	Self {
+	// 		blocks: Vec::new(),
+	// 		width: 0.0,
+	// 		height: 0.0,
+	// 		x: 0.0,
+	// 		y: 0.0,
+	// 	}
+	// }
+
+	pub fn calk_view(&mut self) {
+		let mut width = - std::f32::MAX;
+		let mut height = - std::f32::MAX;
+		let mut x = - std::f32::MAX;
+		let mut y = - std::f32::MAX;
+		
+		self.blocks
+			.iter()
+			.for_each(|(_, block)| {
+				match block.text_align {
+					TextAlignHorizontal::Left| TextAlignHorizontal::Justify => {
+						x = x.max(block.x);
+						y = y.max(block.y);
+						width = width.max(block.width);
+						height = height.max(block.height);
+					}
+					TextAlignHorizontal::Right => {
+						x = x.max(block.x-width);
+						y = y.max(block.y);
+						width = width.max(block.width);
+						height = height.max(block.height);
+					}
+					TextAlignHorizontal::Center => {
+						x = x.max((block.x-width)/2.0);
+						y = y.max(block.y);
+						width = width.max(block.width);
+						height = height.max(block.height);
+					}
+				}
+
+			});
+			
+		self.width = width;
+		self.height = height;
+		self.x = x;
+		self.y = y;
+	}
 }
 
 
@@ -118,6 +182,13 @@ impl FormatChunk {
 			sub_iter: None,
 		}
 	}
+
+	pub fn get_render_chunk (&self) -> RenderChunk {
+		RenderChunk{
+			line_height: self.line_height,
+			color: self.color,
+		}
+	}
 }
 
 
@@ -173,6 +244,19 @@ impl FormatBlock {
 
 		res
 	}
+
+	pub fn to_render_block <'a> (&self) -> RenderBlock<'a> {
+		let mut b = RenderBlock {
+			text_align: self.text_align,
+			width: self.width,
+			height: self.height,
+			x: self.x,
+			y: self.y,
+			lines: Vec::new(),
+		};
+		b.add_line();
+		b
+	}
 }
 
 
@@ -183,7 +267,7 @@ pub struct Line<'a> {
 	pub descent: f32,
 	pub height: f32,
 	pub chars_width: f32,
-	pub glyphs: Vec<(ScaledGlyph<'a>, &'a FormatChunk, char)>,
+	pub glyphs: Vec<(ScaledGlyph<'a>, RenderChunk, char, f32)>,
 	// text_align: TextAlignHorizontal,
 	// x: f32,
 	// y: f32,
@@ -208,11 +292,13 @@ impl <'a> Line<'a> {
 pub struct RenderBlock<'a> {
 	// pub format_block: &'a FormatBlock,
 	pub lines: Vec<Line<'a>>,
+	pub text_align: TextAlignHorizontal,
+
 	// pub text_align: TextAlignHorizontal,
-	// pub width: f32,
-	// pub height: f32,
-	// pub x: f32,
-	// pub y: f32,
+	pub width: f32,
+	pub height: f32,
+	pub x: f32,
+	pub y: f32,
 
 	// pub chunk: FormatChunk,
 }
@@ -221,7 +307,12 @@ impl <'a> RenderBlock<'a> {
 
 	pub fn new () -> Self {
 		let mut b = RenderBlock{
-			lines: Vec::new()
+			text_align: TextAlignHorizontal::Left,
+			lines: Vec::new(),
+			width: 0.0,
+			height: 0.0,
+			x: 0.0,
+			y: 0.0,
 		};
 		b.add_line();
 		b

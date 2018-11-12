@@ -6,6 +6,7 @@ use std::char;
 use self::rusttype::{ScaledGlyph, PositionedGlyph, Glyph, GlyphId, GlyphIter, Scale};
 use self::unicode_normalization::UnicodeNormalization;
 use super::*;
+use std::cmp::Ordering;
 
 
 // use std::cmp::Ordering;
@@ -189,18 +190,22 @@ impl TextRenderer {
 
 		let mut layout = Layout {
 			blocks: Vec::with_capacity(format_blocks.len()),
+			width:0.0,
+			height:0.0,
+			x:0.0,
+			y:0.0,
 		};
 
 		let mut current_font_name = Some("".to_string());
 		let mut font = self.find_font(&current_font_name, fonts);
 		let mut scale = Scale::uniform(0.0);
 		let mut line_width = 0.0;
-		// let mut prev_glyph_id = None;
+		let mut prev_glyph_id = None;
 
         for block in format_blocks {
 			println!("------------------BLOCK-------------------");
 
-			let mut render_block = RenderBlock::new();
+			let mut render_block = block.to_render_block();
 			// let mut line = Line::n/ew();
 
 			for (chunk, str_data) in block.chunk.iter() {
@@ -216,103 +221,70 @@ impl TextRenderer {
 					let line_break_symbol = is_line_break(symbol);
 					if line_break_symbol {
 						render_block.add_line();
-						// prev_glyph_id = None;
+						prev_glyph_id = None;
+						line_width = 0.0;
 						continue;
 					}
+					
+					{
+						let line = render_block.get_line();
 
-					let line = render_block.get_line();
-
-					line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * chunk.line_height );
-					line.descent = line.descent.min(v_metrics.descent);
+						line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * chunk.line_height );
+						line.descent = line.descent.min(v_metrics.descent);
+					}
 
 					let base_glyph = font.glyph(symbol);
 					let mut glyph = base_glyph.scaled(scale);
 					let h_metrics = glyph.h_metrics();
-					let symbol_width = h_metrics.advance_width;
+					let mut symbol_width = h_metrics.advance_width;
 
-					// if let Some(id) = prev_glyph_id {
-					// 	symbol_width += font.pair_kerning(scale, id, glyph.id());
-					// }
-					// prev_glyph_id = Some(glyph.id());
+					if let Some(id) = prev_glyph_id {
+						symbol_width += font.pair_kerning(scale, id, glyph.id());
+					}
+					prev_glyph_id = Some(glyph.id());
 
 
 					if block.width == 0.0 {
-						line.glyphs.push((glyph, chunk, symbol));
+						render_block.get_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
 						continue;
-					} else {
-						
+					} else if line_width+symbol_width > block.width { 
+						render_block.add_line();
+						prev_glyph_id = None;
+						line_width = 0.0;
+						render_block.get_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
 					}
+				}
 
-
-
-
-
+				{
+					let width = render_block.lines
+						.iter_mut()
+						.map(|line| -> f32 {
+							let width = line.glyphs
+								.iter()
+								.map(|e| e.3)
+								.sum();
+							line.width = width;
+							width
+						})
+						.max_by(|a, b| if a > b {Ordering::Greater} else {Ordering::Less})
+						.unwrap();
+					render_block.width = width;
+					let mut height = render_block.lines
+						.iter()
+						.map(|line| line.height )
+						.sum();
+					height += - render_block.get_line().descent;
+					render_block.height = height;
 				}
 
 
 				print!("{}", str_data);
 			}
 
-
-			// self.traverse(&block.chunk, &mut |chunk, parent_chunk| {
-
-
-			// 	match chunk {
-			// 		FormatChunks::String(str_data) => {
-			// 			print!("{}", str_data);
-
-			// 			for symbol in str_data.chars() {
-
-			// 				scale = Scale::uniform(parent_chunk.font_size as f32 * dpi_factor);
-			// 				let v_metrics = font.v_metrics(scale);
-
-			// 				let line_break_symbol = is_line_break(symbol);
-			// 				if line_break_symbol {
-			// 					render_block.add_line();
-			// 				}
-			// 				let line = render_block.get_line();
-
-			// 				line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * parent_chunk.line_height );
-			// 				line.descent = line.descent.min(v_metrics.descent);
-
-			// 				if line_break_symbol {return;}
-
-			// 				let base_glyph = font.glyph(symbol);
-			// 				let mut glyph = base_glyph.scaled(scale);
-
-			// 				if block.width == 0.0 {
-			// 					// line.glyphs.push((glyph, parent_chunk, symbol));
-			// 					return;
-			// 				}
-
-
-
-			// 				// let h_metrics = glyph.h_metrics();
-			// 				// line_width += h_metrics.advance_width;
-			// 				// // TODO: pair symbols font kerning
-
-			// 				// if line_width > block.width {
-
-			// 				// }
-
-
-
-
-			// 			}
-			// 		}
-			// 		FormatChunks::Chunk(_) => {}
-			// 	}
-			// 	println!("---");
-			// });
-
-
-
-
-
-
-			// render_block.lines.push(line);
 			layout.blocks.push((block, render_block));
-        }
+		}
+
+		layout.calk_view();
 
 
 
