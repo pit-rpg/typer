@@ -5,17 +5,17 @@ use std::path::PathBuf;
 use std::char;
 use std::cmp::Ordering;
 use units::ColorRGBA;
-use self::rusttype::{ScaledGlyph, PositionedGlyph, Glyph, GlyphId, GlyphIter, Scale};
+use self::rusttype::{ScaledGlyph, PositionedGlyph, Glyph, GlyphId, GlyphIter, Scale, point};
 use self::unicode_normalization::UnicodeNormalization;
 use super::*;
 
 
 pub struct TextRenderer {
-	pub break_word: bool,
-	pub padding: (usize, usize, usize, usize),
-	line_height: f32,
-	line_width: f32,
-	descent: f32,
+	// pub break_word: bool,
+	// pub padding: (usize, usize, usize, usize),
+	// line_height: f32,
+	// line_width: f32,
+	// descent: f32,
 }
 
 
@@ -37,11 +37,11 @@ pub fn is_can_line_break(c: char) -> bool {
 impl TextRenderer {
 	pub fn new () -> Self {
 		Self {
-			break_word: false,
-			padding: (0, 0, 0, 0),
-			line_height: 0.0,
-			line_width: 0.0,
-			descent: 0.0,
+			// break_word: false,
+			// padding: (0, 0, 0, 0),
+			// line_height: 0.0,
+			// line_width: 0.0,
+			// descent: 0.0,
 		}
 	}
 
@@ -75,7 +75,7 @@ impl TextRenderer {
 	}
 
 
-	pub fn render<'a>(&mut self, format_blocks: Vec<FormatBlock>, dpi_factor: f32, fonts: &'a[(String, Font<'a>)]) {
+	pub fn format<'a>(&mut self, format_blocks: Vec<FormatBlock>, dpi_factor: f32, fonts: &'a[(String, Font<'a>)]) -> Layout<'a> {
 
 		let mut layout = Layout {
 			blocks: Vec::with_capacity(format_blocks.len()),
@@ -113,7 +113,7 @@ impl TextRenderer {
 						line_width = 0.0;
 						continue;
 					}
-					
+
 					{
 						let line = render_block.get_line();
 
@@ -135,7 +135,7 @@ impl TextRenderer {
 					if block.width == 0.0 {
 						render_block.get_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
 						continue;
-					} else if line_width+symbol_width > block.width { 
+					} else if line_width+symbol_width > block.width {
 						render_block.add_line();
 						prev_glyph_id = None;
 						line_width = 0.0;
@@ -171,12 +171,6 @@ impl TextRenderer {
 
 			layout.blocks.push((block, render_block));
 		}
-
-		layout.calk_view();
-
-
-
-
 
 		// // calc lines
 		// let mut v_metrics;
@@ -373,20 +367,62 @@ impl TextRenderer {
 		// }
 
 		// buffer
+
+		layout
+	}
+
+
+	pub fn render( layout: &Layout, buffer: &mut ImgBuffer ) {
+		let mut caret = point(0.0, 0.0);
+		let buffer_width = buffer.width as i32;
+		let buffer_height = buffer.height as i32;
+
+		for ( _f_block, r_block ) in layout.blocks.iter() {
+			caret.y = r_block.y;
+			// caret.x = r_block.x;
+
+			for line in r_block.lines.iter() {
+				caret.y += line.height;
+				caret.x = r_block.x;
+
+				for (scaled_glyph, chunk, symbol, symbol_width) in line.glyphs.iter() {
+
+					let positioned_glyph = scaled_glyph.clone().positioned(caret);
+
+					if let Some(bounding_box) = positioned_glyph.pixel_bounding_box() {
+						positioned_glyph.draw(|x, y, v| {
+							let x = (bounding_box.min.x + (x as i32));
+							let y = (bounding_box.min.y + (y as i32));
+
+							if x < 0 {return};
+							if y < 0 {return};
+							if x >= buffer_width {return};
+							if y >= buffer_height {return};
+							// println!("{}x{}", x, y );
+							// println!("{:?}", chunk.color );
+
+							buffer.blend_pixel(x as usize, y as usize, &chunk.color, v);
+						});
+					}
+
+					caret.x += symbol_width;
+				}
+			}
+		}
 	}
 
 }
 
 
 
-fn eq_font<'a>(a: &Option<String>, b: &Option<String>) -> bool {
-	match (a, b) {
-		(Some(na), Some(nb)) => {na == nb}
-		(Some(_), None) => {false}
-		(None, Some(_),) => {false}
-		_ => false
-	}
-}
+// fn eq_font<'a>(a: &Option<String>, b: &Option<String>) -> bool {
+// 	match (a, b) {
+// 		(Some(na), Some(nb)) => {na == nb}
+// 		(Some(_), None) => {false}
+// 		(None, Some(_),) => {false}
+// 		_ => false
+// 	}
+// }
 
 // http://www.fileformat.info/info/unicode/category/Zs/list.htm
 // Unicode Characters in the 'Separator, Space' Category

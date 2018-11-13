@@ -37,6 +37,7 @@ impl ImgBuffer {
 	}
 
 	pub fn blend_pixel (&mut self, x:usize ,y:usize, pixel: &[u8;4], v:f32) {
+
 		if x > self.width 	{return;}
 		if y > self.height 	{return;}
 

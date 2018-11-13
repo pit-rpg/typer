@@ -39,42 +39,32 @@ pub struct Layout<'a> {
 
 impl <'a> Layout<'a> {
 
-	pub fn calk_view(&mut self) {
+	fn calk_view(&mut self) {
 		let mut width = - std::f32::MAX;
 		let mut height = - std::f32::MAX;
 		let mut x = - std::f32::MAX;
 		let mut y = - std::f32::MAX;
-		
+
 		self.blocks
 			.iter()
 			.for_each(|(_, block)| {
-				match block.text_align {
-					TextAlignHorizontal::Left| TextAlignHorizontal::Justify => {
-						x = x.max(block.x);
-						y = y.max(block.y);
-						width = width.max(block.width);
-						height = height.max(block.height);
-					}
-					TextAlignHorizontal::Right => {
-						x = x.max(block.x-width);
-						y = y.max(block.y);
-						width = width.max(block.width);
-						height = height.max(block.height);
-					}
-					TextAlignHorizontal::Center => {
-						x = x.max((block.x-width)/2.0);
-						y = y.max(block.y);
-						width = width.max(block.width);
-						height = height.max(block.height);
-					}
-				}
-
+				x = x.max(block.x);
+				y = y.max(block.y);
+				width = width.max(block.x + block.width);
+				height = height.max(block.y + block.height);
 			});
-			
+
 		self.width = width;
 		self.height = height;
 		self.x = x;
 		self.y = y;
+	}
+
+
+	pub fn create_full_buffer(&mut self) -> ImgBuffer {
+		self.calk_view();
+		ImgBuffer::new(self.width.ceil() as usize, self.height.ceil() as usize, &[255,255,255,255])
+		// unimplemented!()
 	}
 }
 
@@ -324,7 +314,7 @@ impl <'a> Iterator for FormatChunkIter<'a> {
 					if let FormatChunks::Chunk(c) = &self.chunk.chunks[self.index] {
 						let iter = c.iter();
 						self.sub_iter = Some(Box::new(iter));
-					} 
+					}
 				}
 				let data = self.sub_iter.as_mut().unwrap().next();
 				if data.is_none() {

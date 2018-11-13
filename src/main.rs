@@ -45,10 +45,13 @@ fn main() {
 	// renderer.break_word = true;
 
 
-	let buffer = renderer.render(blocks, 1.0, &fonts);
+	let mut layout = renderer.format(blocks, 1.0, &fonts);
+	let mut buffer = layout.create_full_buffer();
+	TextRenderer::render(&layout, &mut buffer);
 
-	// let mut imgbuf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
-	// imgbuf.save("image_example.png").unwrap();
+
+	let img_buf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
+	img_buf.save("image_example.png").unwrap();
 
 
 
