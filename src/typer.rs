@@ -48,7 +48,11 @@ impl Typer {
 					match &name.local_name[..] {
 						"block" => {
 							level = 0;
-							blocks.push(self.block.new_empty());
+							let mut block = self.block.new_empty();
+							for attribute in attributes {
+								block.set_attribute(&attribute.name.local_name, &attribute.value);
+							}
+							blocks.push(block);
 						}
 						"s" => {
 							let block = blocks
@@ -79,12 +83,14 @@ impl Typer {
 					}
 				}
 				Ok( XmlEvent::Characters(str_chunks) ) | Ok( XmlEvent::Whitespace(str_chunks) ) => {
-					let block = blocks
-						.last_mut()
-						.expect("text must by in <s>");
+					if level > 1 {
+						let block = blocks
+							.last_mut()
+							.expect("text must by in <s>");
 
-					let chunk = get_chunk(&mut block.chunk, level).unwrap();
-					chunk.chunks.push(FormatChunks::String(str_chunks));
+						let chunk = get_chunk(&mut block.chunk, level).unwrap();
+						chunk.chunks.push(FormatChunks::String(str_chunks));
+					}
 				}
 				Err(e) => {
 					println!("Error: {}", e);
@@ -95,6 +101,7 @@ impl Typer {
 		}
 		
 		println!("{:?}", blocks);
+
 		blocks
 	}
 

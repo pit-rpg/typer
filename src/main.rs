@@ -49,7 +49,9 @@ fn main() {
 	let mut buffer = layout.create_full_buffer();
 	TextRenderer::render(&layout, &mut buffer);
 
-
+	println!("================ RENDERED ================");
+	println!("layout {}x{}", layout.width, layout.height);
+	println!("buffer {}x{}", buffer.width, buffer.height);
 	let img_buf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
 	img_buf.save("image_example.png").unwrap();
 

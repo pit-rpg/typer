@@ -15,3 +15,6 @@ image = "0.20.1"
 
 [[example]]
 name = "simple"
+
+[profile.dev]
+opt-level = 2

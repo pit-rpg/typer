@@ -54,7 +54,7 @@ impl ImgBuffer {
 		o_pixel[0] = ((((o_pixel[0] as f32 / 255.0) * (1.0-alpha)) + (f_pixel[0]*alpha)) * 255.0) as u8;
 		o_pixel[1] = ((((o_pixel[1] as f32 / 255.0) * (1.0-alpha)) + (f_pixel[1]*alpha)) * 255.0) as u8;
 		o_pixel[2] = ((((o_pixel[2] as f32 / 255.0) * (1.0-alpha)) + (f_pixel[2]*alpha)) * 255.0) as u8;
-		o_pixel[3] = ((o_alpha + (alpha * o_alpha)).min(1.0).max(0.0) * 255.0) as u8;
+		o_pixel[3] = ( (alpha * v).max(o_alpha) * 255.0 ) as u8;
 	}
 }
 

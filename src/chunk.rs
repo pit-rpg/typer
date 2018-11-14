@@ -158,6 +158,7 @@ impl FormatChunk {
 #[derive(Debug)]
 pub struct FormatBlock {
 	pub text_align: TextAlignHorizontal,
+	pub break_word: bool,
 	pub width: f32,
 	pub height: f32,
 	pub x: f32,
@@ -171,6 +172,7 @@ impl FormatBlock {
 	pub fn new() -> Self {
 		Self {
 			text_align: TextAlignHorizontal::Left,
+			break_word: false,
 			width: 0.0,
 			height: 0.0,
 			x: 0.0,
@@ -195,7 +197,13 @@ impl FormatBlock {
 			"height" 		=> { self.width = val.parse::<f32>().unwrap().abs() }
 			"x" 			=> { self.width = val.parse::<f32>().unwrap() }
 			"y" 			=> { self.width = val.parse::<f32>().unwrap() }
-
+			"break_word" 		=> {
+				match val {
+					"true"|"TRUE"|"1"|"yes" 	=> { self.break_word = true }
+					"false"|"FALSE"|"0"|"no" 	=> { self.break_word = false }
+					_ => {}
+				}
+			}
 			_ => {
 				println!("unknown attribute: {}", key);
 			}
@@ -205,6 +213,7 @@ impl FormatBlock {
 
 	pub fn new_empty(&self) -> Self {
 		let mut res = Self {
+			break_word: self.break_word,
 			width: self.width,
 			height: self.height,
 			x: self.x,
@@ -285,8 +294,13 @@ impl <'a> RenderBlock<'a> {
 		self.lines.push(Line::new());
 	}
 
-	pub fn get_line(&mut self) -> &mut Line<'a> {
+	pub fn get_last_line(&mut self) -> &mut Line<'a> {
 		self.lines.last_mut().unwrap()
+	}
+
+	pub fn get_prev_line(&mut self) -> &mut Line<'a> {
+		let i = self.lines.len();
+		&mut self.lines[i-2]
 	}
 }
 

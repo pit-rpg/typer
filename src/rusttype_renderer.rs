@@ -88,11 +88,16 @@ impl TextRenderer {
 		let mut current_font_name = Some("".to_string());
 		let mut font = self.find_font(&current_font_name, fonts);
 		let mut scale = Scale::uniform(0.0);
-		let mut line_width = 0.0;
-		let mut prev_glyph_id = None;
 
         for block in format_blocks {
+
+			let mut last_wight_space = None;
+			let mut line_width = 0.0;
+			let mut prev_glyph_id = None;
+
 			println!("------------------BLOCK-------------------");
+			println!("{:?}", block);
+
 
 			let mut render_block = block.to_render_block();
 
@@ -115,7 +120,7 @@ impl TextRenderer {
 					}
 
 					{
-						let line = render_block.get_line();
+						let line = render_block.get_last_line();
 
 						line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * chunk.line_height );
 						line.descent = line.descent.min(v_metrics.descent);
@@ -131,15 +136,50 @@ impl TextRenderer {
 					}
 					prev_glyph_id = Some(glyph.id());
 
+					
+					// println!("{}<>{}", line_width+symbol_width, block.width);
+
 
 					if block.width == 0.0 {
-						render_block.get_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
+						render_block.get_last_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
 						continue;
 					} else if line_width+symbol_width > block.width {
 						render_block.add_line();
 						prev_glyph_id = None;
 						line_width = 0.0;
-						render_block.get_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
+						
+						if is_can_line_break(symbol) {
+							last_wight_space = None;
+							continue;
+						}
+
+						if !block.break_word {
+							if let Some(i) = last_wight_space {
+								let mut vec = render_block.get_prev_line().glyphs
+									.splice(i.., None)
+									.skip(1)
+									.collect();
+								// let word: Vec<char> = vec.iter().map(|(_,_,s,_)| s.clone() ).collect();
+								// println!("{:?} => '{}'", word, symbol);				
+								render_block.get_last_line().glyphs.append(&mut vec);
+								line_width = render_block.get_last_line().glyphs
+									.iter()
+									.map(|(..,sw)| sw )
+									.sum();
+								last_wight_space = None;
+							}
+						}
+
+						render_block.get_last_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
+					} else {
+						if is_can_line_break(symbol) {
+							if !block.break_word {
+								last_wight_space = Some(render_block.get_last_line().glyphs.len());
+							} else if line_width == 0.0 {continue;} 
+						}
+
+						render_block.get_last_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
+						line_width += symbol_width;
 					}
 				}
 
@@ -161,12 +201,9 @@ impl TextRenderer {
 						.iter()
 						.map(|line| line.height )
 						.sum();
-					height += - render_block.get_line().descent;
+					height += - render_block.get_last_line().descent;
 					render_block.height = height;
 				}
-
-
-				print!("{}", str_data);
 			}
 
 			layout.blocks.push((block, render_block));
@@ -373,26 +410,47 @@ impl TextRenderer {
 
 
 	pub fn render( layout: &Layout, buffer: &mut ImgBuffer ) {
+		println!("================== LAYOUT ==================");
+		// println!("{:?}", layout);
+
 		let mut caret = point(0.0, 0.0);
 		let buffer_width = buffer.width as i32;
 		let buffer_height = buffer.height as i32;
 
 		for ( _f_block, r_block ) in layout.blocks.iter() {
 			caret.y = r_block.y;
-			// caret.x = r_block.x;
+			let mut space_inc = 0.0; 
 
-			for line in r_block.lines.iter() {
-				caret.y += line.height;
-				caret.x = r_block.x;
+			let lines_count = r_block.lines.len();
 
+			for (i, line) in r_block.lines.iter().enumerate() {
+				caret.y += line.height + line.descent;
+				
+				match r_block.text_align {
+					TextAlignHorizontal::Right => {caret.x = r_block.x + r_block.width - line.width;}
+					TextAlignHorizontal::Center => {caret.x = (r_block.x + r_block.width - line.width)/2.0;}
+					TextAlignHorizontal::Justify if i < lines_count-1 => {
+						caret.x = r_block.x;
+						let c = line.glyphs
+							.iter()
+							.filter( |(_,_,symbol,_)| *symbol == ' ')
+							.count();
+						space_inc = (r_block.width - line.width) / (c as f32);
+					} 
+					_ => {caret.x = r_block.x;}
+					// TextAlignHorizontal::Left => {caret.x = r_block.x;}
+				}
+				
 				for (scaled_glyph, chunk, symbol, symbol_width) in line.glyphs.iter() {
+					print!("{}", symbol);
+					if *symbol == ' ' { caret.x += space_inc };
 
 					let positioned_glyph = scaled_glyph.clone().positioned(caret);
 
 					if let Some(bounding_box) = positioned_glyph.pixel_bounding_box() {
 						positioned_glyph.draw(|x, y, v| {
-							let x = (bounding_box.min.x + (x as i32));
-							let y = (bounding_box.min.y + (y as i32));
+							let x = bounding_box.min.x + (x as i32);
+							let y = bounding_box.min.y + (y as i32);
 
 							if x < 0 {return};
 							if y < 0 {return};
@@ -404,9 +462,11 @@ impl TextRenderer {
 							buffer.blend_pixel(x as usize, y as usize, &chunk.color, v);
 						});
 					}
-
 					caret.x += symbol_width;
 				}
+
+				caret.y -= line.descent;
+				println!("=======");
 			}
 		}
 	}
