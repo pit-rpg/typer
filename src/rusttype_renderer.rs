@@ -44,7 +44,7 @@ impl TextRenderer {
 	}
 
 
-	fn find_font<'a>(&self, name: &Option<String>, fonts: &'a[(String, Font<'a>)] ) -> &'a Font<'a> {
+	fn find_font<'a>(name: &Option<String>, fonts: &'a[(String, Font<'a>)] ) -> &'a Font<'a> {
 		match name {
 			None => {&fonts[0].1}
 			Some(font_name) => {
@@ -60,7 +60,7 @@ impl TextRenderer {
 	}
 
 
-	pub fn format<'a>(&mut self, format_blocks: Vec<FormatBlock>, dpi_factor: f32, fonts: &'a[(String, Font<'a>)]) -> Layout<'a> {
+	pub fn format<'a>(format_blocks: Vec<FormatBlock>, dpi_factor: f32, fonts: &'a[(String, Font<'a>)]) -> Layout<'a> {
 
 		let mut layout = Layout {
 			blocks: Vec::with_capacity(format_blocks.len()),
@@ -71,7 +71,7 @@ impl TextRenderer {
 		};
 
 		let mut current_font_name = Some("".to_string());
-		let mut font = self.find_font(&current_font_name, fonts);
+		let mut font = Self::find_font(&current_font_name, fonts);
 		let mut scale = Scale::uniform(0.0);
 
         for block in format_blocks {
@@ -84,7 +84,7 @@ impl TextRenderer {
 
 			for (chunk, str_data) in block.chunk.iter() {
 				if chunk.font != current_font_name {
-					font = self.find_font(&current_font_name, fonts);
+					font = Self::find_font(&current_font_name, fonts);
 					current_font_name = chunk.font.clone();
 				}
 
@@ -92,8 +92,8 @@ impl TextRenderer {
 				let v_metrics = font.v_metrics(scale);
 
 				for symbol in str_data.chars() {
-					let line_break_symbol = is_line_break(symbol);
-					if line_break_symbol {
+					if is_line_break(symbol) {
+						render_block.get_last_line().force_break = true;
 						render_block.add_line();
 						prev_glyph_id = None;
 						line_width = 0.0;
@@ -102,7 +102,6 @@ impl TextRenderer {
 
 					{
 						let line = render_block.get_last_line();
-
 						line.height = line.height.max( (v_metrics.line_gap + v_metrics.ascent) * chunk.line_height );
 						line.descent = line.descent.min(v_metrics.descent);
 					}
@@ -111,8 +110,10 @@ impl TextRenderer {
 					let mut glyph = base_glyph.scaled(scale);
 					let h_metrics = glyph.h_metrics();
 					let mut symbol_width = h_metrics.advance_width;
+					// println!("{}", h_metrics.left_side_bearing);
 
 					if let Some(id) = prev_glyph_id {
+						// symbol_width += font.pair_kerning(scale, id, glyph.id());
 						symbol_width += font.pair_kerning(scale, id, glyph.id());
 					}
 					prev_glyph_id = Some(glyph.id());
@@ -146,6 +147,7 @@ impl TextRenderer {
 						}
 
 						render_block.get_last_line().glyphs.push((glyph, chunk.get_render_chunk(), symbol, symbol_width));
+						line_width += symbol_width;
 					} else {
 						if is_can_line_break(symbol) {
 							if !block.break_word {
@@ -196,7 +198,9 @@ impl TextRenderer {
 		let buffer_height = buffer.height as i32;
 
 		for ( _f_block, r_block ) in layout.blocks.iter() {
-			caret.y = r_block.y;
+			let offset = point(r_block.x - layout.x, r_block.y - layout.y);
+
+			caret.y = offset.y;
 
 			let lines_count = r_block.lines.len();
 
@@ -205,17 +209,19 @@ impl TextRenderer {
 				let mut space_inc = 0.0; 
 				
 				match r_block.text_align {
-					TextAlignHorizontal::Right => {caret.x = r_block.x + r_block.width - line.width;}
-					TextAlignHorizontal::Center => {caret.x = (r_block.x + r_block.width - line.width)/2.0;}
-					TextAlignHorizontal::Justify if i < lines_count-1 => {
-						caret.x = r_block.x;
-						let c = line.glyphs
-							.iter()
-							.filter( |(_,_,symbol,_)| *symbol == ' ')
-							.count();
-						space_inc = (r_block.width - line.width) / (c as f32);
+					TextAlignHorizontal::Right => {caret.x = offset.x + r_block.width - line.width;}
+					TextAlignHorizontal::Center => {caret.x = (offset.x + r_block.width - line.width)/2.0;}
+					TextAlignHorizontal::Justify => {
+						caret.x = offset.x;
+						if !line.force_break && i != lines_count-1 {
+							let c = line.glyphs
+								.iter()
+								.filter( |(_,_,symbol,_)| *symbol == ' ')
+								.count();
+							space_inc = (r_block.width - line.width) / (c as f32);
+						}
 					} 
-					_ => {caret.x = r_block.x;}
+					_ => {caret.x = offset.x;}
 				}
 				
 				for (scaled_glyph, chunk, symbol, symbol_width) in line.glyphs.iter() {

@@ -37,7 +37,7 @@ pub struct Layout<'a> {
 
 impl <'a> Layout<'a> {
 
-	fn calk_view(&mut self) {
+	pub fn calk_view(&mut self) {
 		let mut width = - std::f32::MAX;
 		let mut height = - std::f32::MAX;
 		let mut x = - std::f32::MAX;
@@ -59,10 +59,9 @@ impl <'a> Layout<'a> {
 	}
 
 
-	pub fn create_full_buffer(&mut self) -> ImgBuffer {
-		self.calk_view();
-		ImgBuffer::new(self.width.ceil() as usize, self.height.ceil() as usize, &[255,255,255,255])
-		// unimplemented!()
+	pub fn create_buffer(&mut self) -> Option<ImgBuffer> {
+		if self.width < 1.0 && self.height < 1.00 {return None};
+		Some(ImgBuffer::new(self.width.ceil() as usize, self.height.ceil() as usize, &[255,255,255,255]))
 	}
 }
 
@@ -192,9 +191,9 @@ impl FormatBlock {
 			}
 
 			"width" 		=> { self.width = val.parse::<f32>().unwrap().abs() }
-			"height" 		=> { self.width = val.parse::<f32>().unwrap().abs() }
-			"x" 			=> { self.width = val.parse::<f32>().unwrap() }
-			"y" 			=> { self.width = val.parse::<f32>().unwrap() }
+			"height" 		=> { self.height = val.parse::<f32>().unwrap().abs() }
+			"x" 			=> { self.x = val.parse::<f32>().unwrap() }
+			"y" 			=> { self.y = val.parse::<f32>().unwrap() }
 			"break_word" 		=> {
 				match val {
 					"true"|"TRUE"|"1"|"yes" 	=> { self.break_word = true }
@@ -245,6 +244,7 @@ pub struct Line<'a> {
 	pub descent: f32,
 	pub height: f32,
 	pub chars_width: f32,
+	pub force_break: bool,
 	pub glyphs: Vec<(ScaledGlyph<'a>, RenderChunk, char, f32)>,
 }
 
@@ -255,6 +255,7 @@ impl <'a> Line<'a> {
 			descent: 0.0,
 			height: 0.0,
 			chars_width: 0.0,
+			force_break: false,
 			glyphs: Vec::new(),
 		}
 	}

@@ -32,10 +32,19 @@ fn main() {
 	let fonts = vec![("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf"))];
 	let fonts = TextRenderer::load_fonts(fonts);
 
-	let mut renderer = TextRenderer::new();
 
-	let mut layout = renderer.format(blocks, 1.0, &fonts);
-	let mut buffer = layout.create_full_buffer();
+	let mut layout = TextRenderer::format(blocks, 1.0, &fonts);
+	layout.calk_view();
+	layout.width = 600.0;
+	layout.height = 600.0;
+
+	layout.x = 0.0;
+	// layout.x = 100.0;
+	layout.y = 0.0;
+
+	// layout.x = 200.0;
+
+	let mut buffer = layout.create_buffer().unwrap();
 	TextRenderer::render(&layout, &mut buffer);
 
 	println!("================ RENDERED ================");
