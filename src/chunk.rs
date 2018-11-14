@@ -1,10 +1,8 @@
-use std::ops::Add;
 use super::units::*;
-use super::rusttype_renderer::{is_line_break};
 extern crate rusttype;
 
+use self::rusttype::{ScaledGlyph};
 
-use self::rusttype::{ScaledGlyph, Font};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TextAlignHorizontal {
@@ -212,7 +210,7 @@ impl FormatBlock {
 
 
 	pub fn new_empty(&self) -> Self {
-		let mut res = Self {
+		let res = Self {
 			break_word: self.break_word,
 			width: self.width,
 			height: self.height,
@@ -277,18 +275,18 @@ pub struct RenderBlock<'a> {
 
 impl <'a> RenderBlock<'a> {
 
-	pub fn new () -> Self {
-		let mut b = RenderBlock{
-			text_align: TextAlignHorizontal::Left,
-			lines: Vec::new(),
-			width: 0.0,
-			height: 0.0,
-			x: 0.0,
-			y: 0.0,
-		};
-		b.add_line();
-		b
-	}
+	// pub fn new () -> Self {
+	// 	let mut b = RenderBlock{
+	// 		text_align: TextAlignHorizontal::Left,
+	// 		lines: Vec::new(),
+	// 		width: 0.0,
+	// 		height: 0.0,
+	// 		x: 0.0,
+	// 		y: 0.0,
+	// 	};
+	// 	b.add_line();
+	// 	b
+	// }
 
 	pub fn add_line(&mut self) {
 		self.lines.push(Line::new());
@@ -323,7 +321,7 @@ impl <'a> Iterator for FormatChunkIter<'a> {
 				self.index += 1;
 				Some((self.chunk, s))
 			}
-			FormatChunks::Chunk(chunk) => {
+			FormatChunks::Chunk(_) => {
 				if self.sub_iter.is_none() {
 					if let FormatChunks::Chunk(c) = &self.chunk.chunks[self.index] {
 						let iter = c.iter();

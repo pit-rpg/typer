@@ -3,7 +3,6 @@ use xml::reader::{EventReader, XmlEvent};
 use chunk::*;
 
 pub struct Typer {
-	chunk: FormatChunk,
 	block: FormatBlock,
 }
 
@@ -11,7 +10,6 @@ impl Typer {
 
 	pub fn new() -> Self {
 		Self {
-			chunk: FormatChunk::new(),
 			block: FormatBlock::new(),
 		}
 	}
@@ -83,7 +81,7 @@ impl Typer {
 					}
 				}
 				Ok( XmlEvent::Characters(str_chunks) ) | Ok( XmlEvent::Whitespace(str_chunks) ) => {
-					if level > 1 {
+					if level > 0 {
 						let block = blocks
 							.last_mut()
 							.expect("text must by in <s>");
@@ -100,8 +98,6 @@ impl Typer {
 			}
 		}
 		
-		println!("{:?}", blocks);
-
 		blocks
 	}
 

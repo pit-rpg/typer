@@ -57,10 +57,3 @@ impl ImgBuffer {
 		o_pixel[3] = ( (alpha * v).max(o_alpha) * 255.0 ) as u8;
 	}
 }
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Point {
-	x:f32,
-	y:f32,
-}

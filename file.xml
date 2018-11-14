@@ -1,9 +1,5 @@
 <block width="600" text-align="justify">
-<!-- <block width="600" text-align="justify"> -->
 
-
-<s font-size="40"><s color="#0000FF" line-height="1.2">Робота над мовою була розпочата Грейдоном Гоаром в 2006 році, в 2009-3 до розробки підключилася Mozilla, і в 2010 році мова була офіційно представлена на Mozilla Summit 2010[4]. Також в 2010 році розробка мови була переведена з попередньої версії компілятора, яка була написана мовою OCaml, на компілятор, який написаний безпосередньо на Rust, з використанням LLVM як бекенду[5]. У 2011 році новий компілятор успішно скомпілював сам себе[6].</s>
-
-
+<s font-size="26" color="#0000FF" line-height="1.2">Rust is a systems programming language with a focus on safety, especially safe concurrency, supporting functional and imperative-procedural paradigms. Rust is syntactically similar to C++, but its designers intend it to provide better memory safety while still maintaining performance. Rust is free and open-source software, released under an MIT License, or Apache License 2.0, sponsored by Mozilla, originally developed by Graydon Hoare, with contributions from Dave Herman and Brendan Eich, and 1900 individual contributors. Its designers have refined the language through the experiences of writing the Servo web browser layout engine and the Rust compiler. Rust won first place for "most loved programming language" in the Stack Overflow Developer Survey in 2016, 2017, and 2018.</s>
 
 </block>
