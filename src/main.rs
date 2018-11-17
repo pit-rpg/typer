@@ -4,12 +4,12 @@ extern crate image;
 
 mod chunk;
 mod typer;
-mod units;
+mod imgBuffer;
 mod rusttype_renderer;
 
 use chunk::*;
 use typer::*;
-use units::*;
+use imgBuffer::*;
 use rusttype_renderer::*;
 
 use std::fs::{File};
@@ -29,7 +29,12 @@ fn main() {
 
 	let blocks = typer.parse(&data);
 
-	let fonts = vec![("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf"))];
+	let fonts = vec![
+		("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf")),
+		("opensans-italic".to_string(), PathBuf::from("fonts/opensans/OpenSans-Italic.ttf")),
+		("dejavu".to_string(), PathBuf::from("fonts/dejavu/DejaVuSansMono.ttf")),
+		("roboto".to_string(), PathBuf::from("fonts/Roboto-Regular.ttf"))
+	];
 	let fonts = TextRenderer::load_fonts(fonts);
 
 

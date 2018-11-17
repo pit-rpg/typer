@@ -3,7 +3,7 @@ extern crate rusttype;
 use std::path::PathBuf;
 use std::char;
 use std::cmp::Ordering;
-use self::rusttype::{Scale, point};
+use self::rusttype::{Scale, point, Rect};
 use super::*;
 
 
@@ -22,6 +22,24 @@ pub fn is_can_line_break(c: char) -> bool {
 		.iter()
 		.find(|e| **e == c)
 		.is_some()
+}
+
+fn can_draw(rect: Rect<i32>, w:i32, h:i32) -> bool {
+	if
+		rect.max.x < 0 ||
+		rect.max.x > w ||
+		rect.max.y < 0 ||
+		rect.max.y > h
+		{false} else {true}
+}
+
+fn is_font_need_update(a: &Option<String>, b: &Option<String>) -> bool {
+	match (a, b) {
+		(None, None) => false,
+		(Some(_), None) => true,
+		(None, Some(_)) => true,
+		(Some(s_a), Some(s_b)) => s_a != s_b,
+	}
 }
 
 
@@ -44,17 +62,17 @@ impl TextRenderer {
 	}
 
 
-	fn find_font<'a>(name: &Option<String>, fonts: &'a[(String, Font<'a>)] ) -> &'a Font<'a> {
+	fn find_font<'a>(name: &Option<String>, fonts: &'a[(String, Font<'a>)] ) -> (Option<std::string::String>, &'a rusttype::Font<'a>) {
 		match name {
-			None => {&fonts[0].1}
+			None => {(Some(fonts[0].0.clone()), &fonts[0].1)}
 			Some(font_name) => {
-				let res = fonts
+				if let Some(font) = fonts
 					.iter()
-					.find(|(name, _)| name == font_name );
-				if let Some(font) = res {
-					return &font.1;
-				}
-				&fonts[0].1
+					.find(|(e_name, _)| e_name == font_name )
+					{
+						return (Some(font.0.clone()), &font.1);
+					}
+				(Some(fonts[0].0.clone()), &fonts[0].1)
 			}
 		}
 	}
@@ -70,11 +88,13 @@ impl TextRenderer {
 			y:0.0,
 		};
 
-		let mut current_font_name = Some("".to_string());
-		let mut font = Self::find_font(&current_font_name, fonts);
+		// let mut current_font_name = Some("__NONE__".to_string());
+		let (mut current_font_name, mut font) = Self::find_font(&None, fonts);
 		let mut scale = Scale::uniform(0.0);
 
         for block in format_blocks {
+			println!("{:?}", block);
+
 
 			let mut last_wight_space = None;
 			let mut line_width = 0.0;
@@ -83,9 +103,15 @@ impl TextRenderer {
 			let mut render_block = block.to_render_block();
 
 			for (chunk, str_data) in block.chunk.iter() {
-				if chunk.font != current_font_name {
-					font = Self::find_font(&current_font_name, fonts);
-					current_font_name = chunk.font.clone();
+
+				println!(" => {:?}", str_data);
+
+
+				if is_font_need_update(&chunk.font, &current_font_name) {
+					let (f,n) = Self::find_font(&chunk.font, fonts);
+					current_font_name = f;
+					font = n;
+					prev_glyph_id = None;
 				}
 
 				scale = Scale::uniform(chunk.font_size as f32 * dpi_factor);
@@ -161,6 +187,20 @@ impl TextRenderer {
 				}
 
 				{
+					let mut prev_line_height = 0.0;
+					if let Some(h) = render_block.lines
+						.iter()
+						.find(|l| l.height > 0.0) {
+							prev_line_height = h.height;
+						}
+					render_block.lines
+						.iter_mut()
+						.for_each(|line| {
+							if line.height == 0.0 {line.height = prev_line_height} else {prev_line_height = line.height}
+						})
+				}
+
+				{
 					let width = render_block.lines
 						.iter_mut()
 						.map(|line| -> f32 {
@@ -197,20 +237,24 @@ impl TextRenderer {
 		let buffer_width = buffer.width as i32;
 		let buffer_height = buffer.height as i32;
 
-		for ( _f_block, r_block ) in layout.blocks.iter() {
-			let offset = point(r_block.x - layout.x, r_block.y - layout.y);
+		for ( f_block, r_block ) in layout.blocks.iter() {
+			let offset = point(f_block.x - layout.x, f_block.y - layout.y);
 
 			caret.y = offset.y;
 
 			let lines_count = r_block.lines.len();
 
 			for (i, line) in r_block.lines.iter().enumerate() {
+				// print!("line height {}, {}", line.height, line.descent);
+
+
 				caret.y += line.height + line.descent;
+
 				let mut space_inc = 0.0; 
 				
-				match r_block.text_align {
-					TextAlignHorizontal::Right => {caret.x = offset.x + r_block.width - line.width;}
-					TextAlignHorizontal::Center => {caret.x = (offset.x + r_block.width - line.width)/2.0;}
+				match f_block.text_align {
+					TextAlignHorizontal::Right => {caret.x = offset.x + f_block.width - line.width;}
+					TextAlignHorizontal::Center => {caret.x = offset.x + ((f_block.width - line.width)/2.0);}
 					TextAlignHorizontal::Justify => {
 						caret.x = offset.x;
 						if !line.force_break && i != lines_count-1 {
@@ -218,12 +262,12 @@ impl TextRenderer {
 								.iter()
 								.filter( |(_,_,symbol,_)| *symbol == ' ')
 								.count();
-							space_inc = (r_block.width - line.width) / (c as f32);
+							space_inc = (f_block.width - line.width) / (c as f32);
 						}
 					} 
 					_ => {caret.x = offset.x;}
 				}
-				
+
 				for (scaled_glyph, chunk, symbol, symbol_width) in line.glyphs.iter() {
 					print!("{}", symbol);
 					if *symbol == ' ' { caret.x += space_inc };
@@ -231,17 +275,19 @@ impl TextRenderer {
 					let positioned_glyph = scaled_glyph.clone().positioned(caret);
 
 					if let Some(bounding_box) = positioned_glyph.pixel_bounding_box() {
-						positioned_glyph.draw(|x, y, v| {
-							let x = bounding_box.min.x + (x as i32);
-							let y = bounding_box.min.y + (y as i32);
+						if can_draw(bounding_box, buffer_width, buffer_height) {
+							positioned_glyph.draw(|x, y, v| {
+								let x = bounding_box.min.x + (x as i32);
+								let y = bounding_box.min.y + (y as i32);
 
-							if x < 0 {return};
-							if y < 0 {return};
-							if x >= buffer_width {return};
-							if y >= buffer_height {return};
+								if x < 0 {return};
+								if y < 0 {return};
+								if x >= buffer_width {return};
+								if y >= buffer_height {return};
 
-							buffer.blend_pixel(x as usize, y as usize, &chunk.color, v);
-						});
+								buffer.blend_pixel(x as usize, y as usize, &chunk.color, v);
+							});
+						}
 					}
 					caret.x += symbol_width;
 				}

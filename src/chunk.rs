@@ -1,4 +1,4 @@
-use super::units::*;
+use super::imgBuffer::*;
 extern crate rusttype;
 
 use self::rusttype::{ScaledGlyph};
@@ -123,13 +123,9 @@ impl FormatChunk {
 			font_size: self.font_size,
 			line_height: self.line_height,
 			color: self.color,
-			font: None,
+			font: self.font.clone(),
 			chunks: Vec::new(),
 		};
-
-		if let Some(font) = &self.font {
-			res.font = Some(font.clone());
-		}
 
 		res
 	}
@@ -276,19 +272,6 @@ pub struct RenderBlock<'a> {
 
 impl <'a> RenderBlock<'a> {
 
-	// pub fn new () -> Self {
-	// 	let mut b = RenderBlock{
-	// 		text_align: TextAlignHorizontal::Left,
-	// 		lines: Vec::new(),
-	// 		width: 0.0,
-	// 		height: 0.0,
-	// 		x: 0.0,
-	// 		y: 0.0,
-	// 	};
-	// 	b.add_line();
-	// 	b
-	// }
-
 	pub fn add_line(&mut self) {
 		self.lines.push(Line::new());
 	}
@@ -315,27 +298,27 @@ impl <'a> Iterator for FormatChunkIter<'a> {
 	type Item = (&'a FormatChunk, &'a str);
 
 	fn next (&mut self) -> Option<Self::Item> {
+		println!("<><>");
 		if self.chunk.chunks.len() == self.index {return None};
+		
+		if self.sub_iter.is_some() {
+			let res = self.sub_iter.as_mut().unwrap().next();
+			if res.is_none() {
+				self.index += 1;
+				self.sub_iter = None;
+				return self.next();
+			}
+			return res;
+		}
 
 		match &self.chunk.chunks[self.index] {
 			FormatChunks::String(s) => {
 				self.index += 1;
 				Some((self.chunk, s))
 			}
-			FormatChunks::Chunk(_) => {
-				if self.sub_iter.is_none() {
-					if let FormatChunks::Chunk(c) = &self.chunk.chunks[self.index] {
-						let iter = c.iter();
-						self.sub_iter = Some(Box::new(iter));
-					}
-				}
-				let data = self.sub_iter.as_mut().unwrap().next();
-				if data.is_none() {
-					self.index+=1;
-					self.next()
-				} else {
-					data
-				}
+			FormatChunks::Chunk(sub_iter) => {
+				self.sub_iter = Some(Box::new(sub_iter.iter()));
+				return self.next();
 			}
 		}
 	}
