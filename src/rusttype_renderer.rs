@@ -3,9 +3,11 @@ extern crate rusttype;
 use std::path::PathBuf;
 use std::char;
 use std::cmp::Ordering;
-use self::rusttype::{Scale, point, Rect};
-use super::*;
-
+use std::fs::{File};
+use std::io::Read;
+use self::rusttype::{Scale, point, Rect, Font};
+use chunk::{FormatBlock, Layout, TextAlignHorizontal};
+use imgBuffer::ImgBuffer;
 
 pub struct TextRenderer {}
 
@@ -93,8 +95,6 @@ impl TextRenderer {
 		let mut scale = Scale::uniform(0.0);
 
         for block in format_blocks {
-			println!("{:?}", block);
-
 
 			let mut last_wight_space = None;
 			let mut line_width = 0.0;
@@ -103,9 +103,6 @@ impl TextRenderer {
 			let mut render_block = block.to_render_block();
 
 			for (chunk, str_data) in block.chunk.iter() {
-
-				println!(" => {:?}", str_data);
-
 
 				if is_font_need_update(&chunk.font, &current_font_name) {
 					let (f,n) = Self::find_font(&chunk.font, fonts);
@@ -136,10 +133,8 @@ impl TextRenderer {
 					let mut glyph = base_glyph.scaled(scale);
 					let h_metrics = glyph.h_metrics();
 					let mut symbol_width = h_metrics.advance_width;
-					// println!("{}", h_metrics.left_side_bearing);
 
 					if let Some(id) = prev_glyph_id {
-						// symbol_width += font.pair_kerning(scale, id, glyph.id());
 						symbol_width += font.pair_kerning(scale, id, glyph.id());
 					}
 					prev_glyph_id = Some(glyph.id());
@@ -231,8 +226,6 @@ impl TextRenderer {
 
 
 	pub fn render( layout: &Layout, buffer: &mut ImgBuffer ) {
-		println!("================== LAYOUT ==================");
-
 		let mut caret = point(0.0, 0.0);
 		let buffer_width = buffer.width as i32;
 		let buffer_height = buffer.height as i32;
@@ -245,9 +238,6 @@ impl TextRenderer {
 			let lines_count = r_block.lines.len();
 
 			for (i, line) in r_block.lines.iter().enumerate() {
-				// print!("line height {}, {}", line.height, line.descent);
-
-
 				caret.y += line.height + line.descent;
 
 				let mut space_inc = 0.0; 
@@ -269,7 +259,6 @@ impl TextRenderer {
 				}
 
 				for (scaled_glyph, chunk, symbol, symbol_width) in line.glyphs.iter() {
-					print!("{}", symbol);
 					if *symbol == ' ' { caret.x += space_inc };
 
 					let positioned_glyph = scaled_glyph.clone().positioned(caret);
@@ -291,9 +280,7 @@ impl TextRenderer {
 					}
 					caret.x += symbol_width;
 				}
-
 				caret.y -= line.descent;
-				println!("=======");
 			}
 		}
 	}

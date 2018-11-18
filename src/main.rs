@@ -7,23 +7,19 @@ mod typer;
 mod imgBuffer;
 mod rusttype_renderer;
 
-use chunk::*;
 use typer::*;
-use imgBuffer::*;
 use rusttype_renderer::*;
 
 use std::fs::{File};
 use std::path::{PathBuf};
 use std::io::Read;
 
-use self::rusttype::{Font};
-
 
 fn main() {
 
 	let mut typer = Typer::new();
 
-    let mut file = File::open("file.xml").unwrap();
+	let mut file = File::open("file.xml").unwrap();
 	let mut data = String::new();
 	file.read_to_string(&mut data).unwrap();
 
@@ -52,9 +48,9 @@ fn main() {
 	let mut buffer = layout.create_buffer().unwrap();
 	TextRenderer::render(&layout, &mut buffer);
 
-	println!("================ RENDERED ================");
-	println!("layout {}x{}", layout.width, layout.height);
-	println!("buffer {}x{}", buffer.width, buffer.height);
+	// println!("================ RENDERED ================");
+	// println!("layout {}x{}", layout.width, layout.height);
+	// println!("buffer {}x{}", buffer.width, buffer.height);
 	let img_buf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
 	img_buf.save("image_example.png").unwrap();
 

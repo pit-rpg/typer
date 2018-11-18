@@ -1,6 +1,6 @@
-use super::imgBuffer::*;
 extern crate rusttype;
 
+use imgBuffer::{ImgBuffer, ColorRGBA};
 use self::rusttype::{ScaledGlyph};
 
 
@@ -298,7 +298,6 @@ impl <'a> Iterator for FormatChunkIter<'a> {
 	type Item = (&'a FormatChunk, &'a str);
 
 	fn next (&mut self) -> Option<Self::Item> {
-		println!("<><>");
 		if self.chunk.chunks.len() == self.index {return None};
 		
 		if self.sub_iter.is_some() {
