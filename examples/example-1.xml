@@ -1,4 +1,4 @@
-<block width="600" text-align="justify" x="0" y="100">
+<block width="600" x="0" y="0">
 <s font-size="24" color="#0000FF" line-height="1.2" font="dejavu" ><s font="roboto" color="#000000"><s color="#BB0000" font="opensans-italic" font-size="32">Rust</s> is a systems programming language with a focus on safety, especially safe concurrency, supporting functional and imperative-procedural paradigms.</s>
 
 <s font="default" color="#007700">Rust is syntactically similar to C++, but its designers intend it to provide better memory safety while still maintaining performance.</s>

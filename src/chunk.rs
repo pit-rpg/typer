@@ -1,6 +1,6 @@
 extern crate rusttype;
 
-use imgBuffer::{ImgBuffer, ColorRGBA};
+use img_buffer::{ImgBuffer, ColorRGBA};
 use self::rusttype::{ScaledGlyph};
 
 
@@ -59,9 +59,9 @@ impl <'a> Layout<'a> {
 	}
 
 
-	pub fn create_buffer(&mut self) -> Option<ImgBuffer> {
+	pub fn create_buffer(&mut self, color: &[u8; 4]) -> Option<ImgBuffer> {
 		if self.width < 1.0 && self.height < 1.00 {return None};
-		Some(ImgBuffer::new(self.width.ceil() as usize, self.height.ceil() as usize, &[255,255,255,255]))
+		Some(ImgBuffer::new(self.width.ceil() as usize, self.height.ceil() as usize, color))
 	}
 }
 
@@ -109,25 +109,25 @@ impl FormatChunk {
 						u8::from_str_radix(val.get(5..7).expect(err), 16).expect(err),
 						u8::from_str_radix(val.get(7..).expect(err), 16).expect(err)
 					];
+				} else {
+					println!("wrong value '{}' for attribute: '{}' => #xxxxxx or #xxxxxxxx", val, key);
 				}
 			}
 			_ => {
-				println!("unknown attribute: {}", key);
+				println!("unknown attribute: '{}'", key);
 			}
 		}
 	}
 
 
 	pub fn new_empty(&self) -> Self {
-		let mut res = Self {
+		Self {
 			font_size: self.font_size,
 			line_height: self.line_height,
 			color: self.color,
 			font: self.font.clone(),
 			chunks: Vec::new(),
-		};
-
-		res
+		}
 	}
 
 
@@ -182,7 +182,7 @@ impl FormatBlock {
 					"right"|"RIGHT" 	=> { self.text_align = TextAlignHorizontal::Right }
 					"center"|"CENTER" 	=> { self.text_align = TextAlignHorizontal::Center }
 					"justify"|"JUSTIFY" => { self.text_align = TextAlignHorizontal::Justify }
-					_ => {}
+					_ => { println!("unknown value '{}' for attribute: '{}'", val, key); }
 				}
 			}
 
@@ -194,11 +194,11 @@ impl FormatBlock {
 				match val {
 					"true"|"TRUE"|"1"|"yes" 	=> { self.break_word = true }
 					"false"|"FALSE"|"0"|"no" 	=> { self.break_word = false }
-					_ => {}
+					_ => { println!("unknown value '{}' for attribute: '{}'", val, key); }
 				}
 			}
 			_ => {
-				println!("unknown attribute: {}", key);
+				println!("unknown attribute: '{}'", key);
 			}
 		}
 	}

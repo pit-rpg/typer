@@ -1,29 +1,18 @@
-extern crate xml;
-extern crate rusttype;
 extern crate image;
-
-mod chunk;
-mod typer;
-mod imgBuffer;
-mod rusttype_renderer;
-
-use typer::*;
-use rusttype_renderer::*;
+extern crate typer;
 
 use std::fs::{File};
 use std::path::{PathBuf};
 use std::io::Read;
-
+use typer::{TextRenderer, Typer};
 
 fn main() {
 
 	let mut typer = Typer::new();
 
-	let mut file = File::open("file.xml").unwrap();
+	let mut file = File::open("examples/example-2.xml").unwrap();
 	let mut data = String::new();
 	file.read_to_string(&mut data).unwrap();
-
-	let blocks = typer.parse(&data);
 
 	let fonts = vec![
 		("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf")),
@@ -33,30 +22,19 @@ fn main() {
 	];
 	let fonts = TextRenderer::load_fonts(fonts);
 
-
+	let blocks = typer.parse(&data);
 	let mut layout = TextRenderer::format(blocks, 1.0, &fonts);
-	layout.calk_view();
-	layout.width = 600.0;
-	layout.height = 600.0;
 
-	layout.x = 0.0;
-	// layout.x = 100.0;
-	layout.y = 0.0;
+	layout.width = 800.0;
+	layout.height = 800.0;
+	layout.x = -100.0;
+	layout.y = -100.0;
 
-	// layout.x = 200.0;
-
-	let mut buffer = layout.create_buffer().unwrap();
+	let mut buffer = layout.create_buffer(&[30,30,30,255]).unwrap();
 	TextRenderer::render(&layout, &mut buffer);
 
-	// println!("================ RENDERED ================");
-	// println!("layout {}x{}", layout.width, layout.height);
-	// println!("buffer {}x{}", buffer.width, buffer.height);
 	let img_buf = image::RgbaImage::from_vec(buffer.width as u32, buffer.height as u32, buffer.buffer).unwrap();
-	img_buf.save("image_example.png").unwrap();
-
-
-
+	img_buf.save("examples/out.png").unwrap();
+	println!("RENDERED: examples/out.png");
+	println!("img {}x{}", buffer.width, buffer.height);
 }
-
-
-

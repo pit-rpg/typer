@@ -1,5 +1,7 @@
+extern crate xml;
+
+use self::xml::reader::{EventReader, XmlEvent};
 use std::io::BufReader;
-use xml::reader::{EventReader, XmlEvent};
 use chunk::*;
 
 pub struct Typer {
@@ -40,7 +42,6 @@ impl Typer {
 		}
 
 		for e in parser {
-
 			match e {
 				Ok( XmlEvent::StartElement { name, attributes, .. } ) => {
 					match &name.local_name[..] {
@@ -100,5 +101,4 @@ impl Typer {
 		
 		blocks
 	}
-
 }

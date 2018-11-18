@@ -8,7 +8,7 @@ pub struct ImgBuffer {
 }
 
 impl ImgBuffer {
-	pub fn new(width:usize, height:usize, fill:&[u8;4]) -> Self {
+	pub fn new(width:usize, height:usize, fill: &[u8; 4]) -> Self {
 		let capacity = width * height * 4;
 		let mut buffer: Vec<u8> = Vec::with_capacity(capacity);
 

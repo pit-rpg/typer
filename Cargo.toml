@@ -5,15 +5,15 @@ authors = ["Krovspei Stepan <shtefanrpg@gmail.com>"]
 
 [dependencies]
 xml-rs = "0.8.0"
-rusttype = "0.7.2"
-image = "0.20.1"
-
+rusttype = "0.7.3"
 
 [dev-dependencies]
-
+image = "0.20.1"
 
 [[example]]
-name = "simple"
+name = "example-1"
+[[example]]
+name = "example-2"
 
 [profile.dev]
 opt-level = 2
