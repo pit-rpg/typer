@@ -15,10 +15,7 @@ fn main() {
 	file.read_to_string(&mut data).unwrap();
 
 	let fonts = vec![
-		("default".to_string(), PathBuf::from("fonts/wqy-microhei/WenQuanYiMicroHei.ttf")),
-		("opensans-italic".to_string(), PathBuf::from("fonts/opensans/OpenSans-Italic.ttf")),
-		("dejavu".to_string(), PathBuf::from("fonts/dejavu/DejaVuSansMono.ttf")),
-		("roboto".to_string(), PathBuf::from("fonts/Roboto-Regular.ttf"))
+		("__".to_string(), PathBuf::from("fonts/Roboto-Regular.ttf"))
 	];
 	let fonts = TextRenderer::load_fonts(fonts);
 

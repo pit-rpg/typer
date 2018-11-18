@@ -7,7 +7,7 @@ use std::fs::{File};
 use std::io::Read;
 use self::rusttype::{Scale, point, Rect, Font};
 use chunk::{FormatBlock, Layout, TextAlignHorizontal};
-use img_buffer::ImgBuffer;
+use img_buffer::{ImgBuffer, ImgBufferTrait};
 
 
 pub struct TextRenderer {}
@@ -191,10 +191,11 @@ impl TextRenderer {
 	}
 
 
-	pub fn render( layout: &Layout, buffer: &mut ImgBuffer ) {
+	pub fn render<T: ImgBufferTrait>( layout: &Layout, buffer: &mut T )
+	{
 		let mut caret = point(0.0, 0.0);
-		let buffer_width = buffer.width as i32;
-		let buffer_height = buffer.height as i32;
+		let buffer_width = buffer.width() as i32;
+		let buffer_height = buffer.height() as i32;
 
 		for ( f_block, r_block ) in layout.blocks.iter() {
 			let offset = point(f_block.x - layout.x, f_block.y - layout.y);
@@ -237,8 +238,6 @@ impl TextRenderer {
 
 								if x < 0 {return};
 								if y < 0 {return};
-								if x >= buffer_width {return};
-								if y >= buffer_height {return};
 
 								buffer.blend_pixel(x as usize, y as usize, &chunk.color, v);
 							});
