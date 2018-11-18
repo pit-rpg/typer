@@ -2,6 +2,19 @@
 name = "typer"
 version = "0.1.0"
 authors = ["Krovspei Stepan <shtefanrpg@gmail.com>"]
+exclude = [
+    "assets/*",
+    "examples/*",
+    "fonts/*",
+]
+
+description = "Typer - simple text rendering library, with some additional features."
+repository = "https://github.com/curiosus-stefan/typer"
+readme = "README.md"
+license = "MIT"
+keywords = ["font", "rendering", "layout", "text"]
+categories = ["typography", "GUI"]
+
 
 [dependencies]
 xml-rs = "0.8.0"
