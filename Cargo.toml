@@ -18,6 +18,8 @@ name = "example-2"
 name = "example-3"
 [[example]]
 name = "example-4"
+[[example]]
+name = "example-5"
 
 [profile.dev]
 opt-level = 2
