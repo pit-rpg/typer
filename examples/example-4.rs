@@ -4,7 +4,7 @@ extern crate typer;
 use std::fs::{File};
 use std::path::{PathBuf, Path};
 use std::io::Read;
-use typer::{TextRenderer, Typer, ImgBufferRef, ImgBufferTrait};
+use typer::{TextRenderer, Typer, ImgBufferRef};
 use image::*;
 
 fn main() {
@@ -21,9 +21,6 @@ fn main() {
 	let mut typer = Typer::new();
 	let blocks = typer.parse(&data);
 
-	println!("{:?}", blocks);
-	println!("{:?}", blocks.len());
-
 	let layout = TextRenderer::format(blocks, 1.0, &fonts);
 		
 	let width = im.width();
@@ -36,7 +33,6 @@ fn main() {
 
 	let img_buf = image::RgbaImage::from_vec(width as u32, height as u32, buf).unwrap();
 	img_buf.save("examples/out.png").unwrap();
-
 
 	println!("RENDERED: examples/out.png");
 	println!("img {}x{}", width, height);

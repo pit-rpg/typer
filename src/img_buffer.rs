@@ -15,7 +15,6 @@ pub struct ImgBufferRef<'a> {
 }
 
 pub trait ImgBufferTrait {
-	// fn new(width:usize, height:usize, fill: &[u8; 4]) -> Self;
 	fn get_pixel_mut(&mut self, x: usize, y: usize) -> &mut [u8];
 	fn put_pixel(&mut self, x:usize ,y:usize, pixel: &[u8;4]);
 	fn blend_pixel (&mut self, x:usize ,y:usize, pixel: &[u8;4], v:f32);

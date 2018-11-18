@@ -1,21 +1,21 @@
 <blocks>
-	<block width="300" x="100" y="20" text-align="left">
+	<block width="300" x="100" y="40" text-align="left">
 	<s font-size="22" color="#7777FF" line-height="1.1">Rust is a systems programming language that runs blazingly fast, prevents segfaults, and guarantees thread safety.</s>
 	</block>
 
-	<block width="300" x="100" y="120" text-align="right">
+	<block width="300" x="100" y="160" text-align="right">
 	<s font-size="22" color="#FF3333" line-height="1.1">Rust is a systems programming language that runs blazingly fast, prevents segfaults, and guarantees thread safety.</s>
 	</block>
 
-	<block width="300" x="100" y="240" text-align="center">
+	<block width="300" x="100" y="280" text-align="center">
 	<s font-size="22" color="#33FF33" line-height="1.1">Rust is a systems programming language that runs blazingly fast, prevents segfaults, and guarantees thread safety.</s>
 	</block>
 
-	<block width="300" x="100" y="360" text-align="justify">
+	<block width="300" x="100" y="400" text-align="justify">
 	<s font-size="22" color="#FFFF33" line-height="1.1">Rust is a systems programming language that runs blazingly fast, prevents segfaults, and guarantees thread safety.</s>
 	</block>
 
-	<block width="300" x="100" y="480">
+	<block width="300" x="100" y="520">
 	<s font-size="22" color="#FFFF33" line-height="1.1"><s color="#FFFFFF">Rust</s> is a systems programming language that runs <s font="opensans-italic" color="#33FF33" font-size="32">blazingly</s> fast, <s font="dejavu" color="#33FF33" font-size="38">prevents segfaults</s>, and guarantees <s font="dejavu" color="#44FFFF" font-size="28">thread safety</s>.</s>
 	</block>
 

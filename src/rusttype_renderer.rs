@@ -7,7 +7,7 @@ use std::fs::{File};
 use std::io::Read;
 use self::rusttype::{Scale, point, Rect, Font};
 use chunk::{FormatBlock, Layout, TextAlignHorizontal};
-use img_buffer::{ImgBuffer, ImgBufferTrait};
+use img_buffer::{ImgBufferTrait};
 
 
 pub struct TextRenderer {}

@@ -1,3 +1,7 @@
 # typer
-work in progress  
-version 0.0.0.0.0.0.1
+Typer - simple text rendering library, with some additional features.
+
+## Examples
+cargo run --example example-5
+
+![](out.png)
