@@ -1,0 +1,9 @@
+<blocks>
+	<block width="300" x="220" y="450" text-align="right">
+	<s font-size="18" color="#FF3333" line-height="1.1"><s color="#FFFF33" font-size="24">Predator</s> is a 1987 American science fiction action film directed by John McTiernan and written by brothers Jim and John Thomas.</s>
+	</block>
+
+	<block width="300" x="560" y="450" text-align="left">
+	<s font-size="18" color="#33FF33" line-height="1.1"><s color="#FFFF33" font-size="24">Alien</s> is a 1979 science fiction horror film directed by Ridley Scott and written by Dan O'Bannon. Based on a story by O'Bannon and Ronald Shusett.</s>
+	</block>
+</blocks>
