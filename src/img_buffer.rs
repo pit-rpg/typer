@@ -18,6 +18,7 @@ pub trait ImgBufferTrait {
 	#[inline] fn get_pixel_mut(&mut self, x: usize, y: usize) -> &mut [u8];
 	#[inline] fn width(&self) -> usize;
 	#[inline] fn height(&self) -> usize;
+	#[inline] fn get_buffer_mut(&mut self) -> &mut Vec<u8>;
 
 	fn blend_pixel (&mut self, x:usize ,y:usize, pixel: &[u8;4], v:f32) {
 		if 
@@ -49,7 +50,19 @@ pub trait ImgBufferTrait {
 		o_pixel[3] = pixel[3];
 	}
 
-	fn clear(&mut self, color: &[u8;4]);
+	fn clear(&mut self, color: &[u8;4]) {
+		let buf = self.get_buffer_mut();
+		for i in 0..buf.len() {
+			buf[i] = color[i%4];
+		}
+	}
+
+	fn fill(&mut self, n: u8) {
+		let buf = self.get_buffer_mut();
+		buf
+			.iter_mut()
+			.for_each(|e| *e = n )
+	}
 }
 
 impl ImgBuffer {
@@ -77,12 +90,10 @@ impl ImgBufferTrait for ImgBuffer {
 		let i =  y * (self.width*4) + (x * 4);
 		&mut self.buffer[i..(i+4)]
 	}
-
-	fn clear(&mut self, color: &[u8;4]) {
-		for i in 0..self.buffer.len() {
-			self.buffer[i] = color[i%4];
-		}
+	#[inline] fn get_buffer_mut(&mut self) -> &mut Vec<u8> {
+		&mut self.buffer
 	}
+
 }
 
 
@@ -99,19 +110,13 @@ impl <'a> ImgBufferRef<'a> {
 
 impl <'a> ImgBufferTrait for ImgBufferRef<'a> {
 	
-	#[inline] 
-	fn width(&self) -> usize {self.width}
-	#[inline] 
-	fn height(&self) -> usize {self.height}
-	#[inline]
-	fn get_pixel_mut(&mut self, x: usize, y: usize) -> &mut [u8] {
+	#[inline] fn width(&self) -> usize {self.width}
+	#[inline] fn height(&self) -> usize {self.height}
+	#[inline] fn get_pixel_mut(&mut self, x: usize, y: usize) -> &mut [u8] {
 		let i =  y * (self.width*4) + (x * 4);
 		&mut self.buffer[i..(i+4)]
 	}
-	
-	fn clear(&mut self, color: &[u8;4]) {
-		for i in 0..self.buffer.len() {
-			self.buffer[i] = color[i%4];
-		}
+	#[inline] fn get_buffer_mut(&mut self) -> &mut Vec<u8> {
+		&mut self.buffer
 	}
 }
