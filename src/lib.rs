@@ -1,3 +1,5 @@
+pub extern crate rusttype;
+
 mod chunk;
 mod img_buffer;
 mod rusttype_renderer;
