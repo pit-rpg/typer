@@ -1,6 +1,6 @@
 [package]
 name = "typer"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Krovspei Stepan <shtefanrpg@gmail.com>"]
 exclude = [
     "assets/*",
